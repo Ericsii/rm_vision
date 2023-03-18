@@ -1,6 +1,4 @@
-// Copyright 2022 Chen Jun
-
-#include "armor_processor/spin_observer.hpp"
+#include <armor_processor/spin_observer.hpp>
 
 #include <angles/angles.h>
 

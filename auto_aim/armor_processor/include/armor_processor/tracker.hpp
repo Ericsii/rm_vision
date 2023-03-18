@@ -1,5 +1,3 @@
-// Copyright 2022 Chen Jun
-
 #ifndef ARMOR_PROCESSOR__TRACKER_HPP_
 #define ARMOR_PROCESSOR__TRACKER_HPP_
 
@@ -14,6 +12,7 @@
 #include <memory>
 
 #include "armor_processor/kalman_filter.hpp"
+#include "armor_processor/exkalman_filter.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 
@@ -23,7 +22,7 @@ class Tracker
 {
 public:
   Tracker(
-    const KalmanFilterMatrices & kf_matrices, double max_match_distance, int tracking_threshold,
+    const Eigen::MatrixXd & Q, const Eigen::MatrixXd & R, double max_match_distance, int tracking_threshold,
     int lost_threshold);
 
   using Armors = auto_aim_interfaces::msg::Armors;
@@ -44,7 +43,7 @@ public:
   Eigen::VectorXd target_state;
 
 private:
-  KalmanFilterMatrices kf_matrices_;
+  Eigen::MatrixXd Q_, R_;
   std::unique_ptr<KalmanFilter> kf_;
 
   Eigen::Vector3d tracking_velocity_;

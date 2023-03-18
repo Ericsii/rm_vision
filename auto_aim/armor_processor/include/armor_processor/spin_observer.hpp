@@ -1,5 +1,3 @@
-// Copyright 2022 Chen Jun
-
 #ifndef ARMOR_PROCESSOR__SPIN_OBSERVER_HPP_
 #define ARMOR_PROCESSOR__SPIN_OBSERVER_HPP_
 

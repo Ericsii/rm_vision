@@ -1,43 +1,29 @@
-// Copyright 2022 Chen Jun
-
-#include "armor_processor/kalman_filter.hpp"
+#include <armor_processor/kalman_filter.hpp>
 
 namespace rm_auto_aim
 {
-KalmanFilter::KalmanFilter(const KalmanFilterMatrices & matrices)
-: F(matrices.F),
-  H(matrices.H),
-  Q(matrices.Q),
-  R(matrices.R),
-  P_post(matrices.P),
-  n(matrices.F.rows()),
-  I(Eigen::MatrixXd::Identity(n, n)),
-  x_pre(n),
-  x_post(n)
+
+KalmanFilter::KalmanFilter(const int dim_x, const int dim_z, const int dim_u)
+ : Filter(dim_x, dim_z, dim_u)
 {
+  F = Eigen::MatrixXd::Zero(dim_x, dim_x);
+  H = Eigen::MatrixXd::Zero(dim_z, dim_x);
+  B = Eigen::MatrixXd::Zero(dim_x, dim_u);
 }
 
-void KalmanFilter::init(const Eigen::VectorXd & x0) { x_post = x0; }
-
-Eigen::MatrixXd KalmanFilter::predict(const Eigen::MatrixXd & F)
+Eigen::MatrixXd KalmanFilter::predict(const Eigen::VectorXd& u)
 {
-  this->F = F;
+  x_prior = F * x_post + B * u;
+  P = F * P * F.transpose() + R;
 
-  x_pre = F * x_post;
-  P_pre = F * P_post * F.transpose() + Q;
-
-  // handle the case when there will be no measurement before the next predict
-  x_post = x_pre;
-  P_post = P_pre;
-
-  return x_pre;
+  return x_prior;
 }
 
-Eigen::MatrixXd KalmanFilter::update(const Eigen::VectorXd & z)
+Eigen::MatrixXd KalmanFilter::update(const Eigen::VectorXd& z)
 {
-  K = P_pre * H.transpose() * (H * P_pre * H.transpose() + R).inverse();
-  x_post = x_pre + K * (z - H * x_pre);
-  P_post = (I - K * H) * P_pre;
+  K = P * H.transpose() * (H * P * H.transpose() + Q).inverse();
+  x_post = x_prior + K * (z - H * x_prior);
+  P = (I - K * H) * P;
 
   return x_post;
 }

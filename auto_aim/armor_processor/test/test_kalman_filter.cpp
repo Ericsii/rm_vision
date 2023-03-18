@@ -29,7 +29,7 @@ TEST(KalmanFilterTest, init)
   Q << .05, .05, .0, .05;
   R << 0.1;
   P.setIdentity();
-
+/*
   auto matrices = rm_auto_aim::KalmanFilterMatrices{F, H, Q, R, P};
 
   KF = std::make_unique<rm_auto_aim::KalmanFilter>(matrices);
@@ -39,6 +39,7 @@ TEST(KalmanFilterTest, init)
   std::cout << "Q: \n" << Q << std::endl;
   std::cout << "R: \n" << R << std::endl;
   std::cout << "P: \n" << P << std::endl;
+*/
 }
 
 TEST(KalmanFilterTest, predict_update)

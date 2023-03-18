@@ -1,57 +1,22 @@
-// Copyright 2022 Chen Jun
-
 #ifndef ARMOR_PROCESSOR__KALMAN_FILTER_HPP_
 #define ARMOR_PROCESSOR__KALMAN_FILTER_HPP_
 
-#include <Eigen/Dense>
+#include "armor_processor/filter_base.hpp"
 
 namespace rm_auto_aim
 {
-struct KalmanFilterMatrices
-{
-  Eigen::MatrixXd F;  // state transition matrix
-  Eigen::MatrixXd H;  // measurement matrix
-  Eigen::MatrixXd Q;  // process noise covariance matrix
-  Eigen::MatrixXd R;  // measurement noise covariance matrix
-  Eigen::MatrixXd P;  // error estimate covariance matrix
-};
 
-class KalmanFilter
+class KalmanFilter : public Filter
 {
 public:
-  explicit KalmanFilter(const KalmanFilterMatrices & matrices);
+  explicit KalmanFilter(const int dim_x, const int dim_z, const int dim_u = 0);
 
-  // Initialize the filter with a guess for initial states.
-  void init(const Eigen::VectorXd & x0);
+  Eigen::MatrixXd predict(const Eigen::VectorXd& u) override;
 
-  // Computes a predicted state
-  Eigen::MatrixXd predict(const Eigen::MatrixXd & F);
+  Eigen::MatrixXd update(const Eigen::VectorXd& z) override;
 
-  // Update the estimated state based on measurement
-  Eigen::MatrixXd update(const Eigen::VectorXd & z);
-
-private:
-  // Invariant matrices
-  Eigen::MatrixXd F, H, Q, R;
-
-  // Priori error estimate covariance matrix
-  Eigen::MatrixXd P_pre;
-  // Posteriori error estimate covariance matrix
-  Eigen::MatrixXd P_post;
-
-  // Kalman gain
-  Eigen::MatrixXd K;
-
-  // System dimensions
-  int n;
-
-  // N-size identity
-  Eigen::MatrixXd I;
-
-  // Predicted state
-  Eigen::VectorXd x_pre;
-  // Updated state
-  Eigen::VectorXd x_post;
+public:
+  Eigen::MatrixXd F, H, B;
 };
 
 }  // namespace rm_auto_aim

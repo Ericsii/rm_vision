@@ -1,5 +1,3 @@
-// Copyright 2022 Chen Jun
-
 #ifndef ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 #define ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 
@@ -43,7 +41,7 @@ private:
   rclcpp::Time last_time_;
 
   // Initial KF matrices
-  KalmanFilterMatrices kf_matrices_;
+  //KalmanFilterMatrices kf_matrices_;
   double dt_;
 
   // Armor tracker
