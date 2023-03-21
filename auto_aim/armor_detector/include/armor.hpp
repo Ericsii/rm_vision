@@ -20,11 +20,12 @@ enum ArmorType { SMALL = 0, LARGE = 1 };
 struct Light : public cv::RotatedRect
 {
   Light() = default;
-  explicit Light(cv::RotatedRect box) : cv::RotatedRect(box)
+  explicit Light(cv::RotatedRect box)
+  : cv::RotatedRect(box)
   {
     cv::Point2f p[4];
     box.points(p);
-    std::sort(p, p + 4, [](const cv::Point2f & a, const cv::Point2f & b) { return a.y < b.y; });
+    std::sort(p, p + 4, [](const cv::Point2f & a, const cv::Point2f & b) {return a.y < b.y;});
     top = (p[0] + p[1]) / 2;
     bottom = (p[2] + p[3]) / 2;
 

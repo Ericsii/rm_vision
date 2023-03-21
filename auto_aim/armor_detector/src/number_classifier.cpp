@@ -128,7 +128,7 @@ void NumberClassifier::doClassify(std::vector<Armor> & armors)
         bool mismatch = false;
         if (armor.armor_type == LARGE) {
           mismatch = armor.number == 'O' || armor.number == '2' || armor.number == '3' ||
-                     armor.number == '4' || armor.number == '5';
+          armor.number == '4' || armor.number == '5';
         } else if (armor.armor_type == SMALL) {
           mismatch = armor.number == '1' || armor.number == 'B' || armor.number == 'G';
         }

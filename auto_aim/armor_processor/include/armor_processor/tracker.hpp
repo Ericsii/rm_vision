@@ -22,7 +22,8 @@ class Tracker
 {
 public:
   Tracker(
-    const Eigen::MatrixXd & Q, const Eigen::MatrixXd & R, double max_match_distance, int tracking_threshold,
+    const Eigen::MatrixXd & Q, const Eigen::MatrixXd & R, double dt, double max_match_distance,
+    int tracking_threshold,
     int lost_threshold);
 
   using Armors = auto_aim_interfaces::msg::Armors;
@@ -32,7 +33,8 @@ public:
 
   void update(const Armors::SharedPtr & armors_msg, const double & dt);
 
-  enum State {
+  enum State
+  {
     LOST,
     DETECTING,
     TRACKING,
@@ -44,7 +46,9 @@ public:
 
 private:
   Eigen::MatrixXd Q_, R_;
-  std::unique_ptr<KalmanFilter> kf_;
+  std::shared_ptr<Filter> kf_;
+
+  double dt_;
 
   Eigen::Vector3d tracking_velocity_;
 

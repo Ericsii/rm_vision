@@ -30,3 +30,8 @@
       max_match_distance: 0.2
       tracking_threshold: 5
       lost_threshold: 5
+
+    filter:
+      filter_p: 5.0
+      filter_v: 5.0
+      filter_r: 0.01

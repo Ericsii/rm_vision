@@ -74,7 +74,8 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   // Debug param change moniter
   debug_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
   debug_cb_handle_ =
-    debug_param_sub_->add_parameter_callback("debug", [this](const rclcpp::Parameter & p) {
+    debug_param_sub_->add_parameter_callback(
+    "debug", [this](const rclcpp::Parameter & p) {
       debug_ = p.as_bool();
       debug_ ? createDebugPublishers() : destroyDebugPublishers();
     });
@@ -88,9 +89,11 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
       cam_info_sub_.reset();
     });
 
-  img_sub_ = std::make_shared<image_transport::Subscriber>(image_transport::create_subscription(
-    this, "camera/image_raw", std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1),
-    transport_, rmw_qos_profile_sensor_data));
+  img_sub_ = std::make_shared<image_transport::Subscriber>(
+    image_transport::create_subscription(
+      this, "camera/image_raw",
+      std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1),
+      transport_, rmw_qos_profile_sensor_data));
 }
 
 void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg)
@@ -199,10 +202,10 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
 
     std::sort(
       detector_->debug_lights.data.begin(), detector_->debug_lights.data.end(),
-      [](const auto & l1, const auto & l2) { return l1.center_x < l2.center_x; });
+      [](const auto & l1, const auto & l2) {return l1.center_x < l2.center_x;});
     std::sort(
       detector_->debug_armors.data.begin(), detector_->debug_armors.data.end(),
-      [](const auto & a1, const auto & a2) { return a1.center_x < a2.center_x; });
+      [](const auto & a1, const auto & a2) {return a1.center_x < a2.center_x;});
 
     lights_data_pub_->publish(detector_->debug_lights);
     armors_data_pub_->publish(detector_->debug_armors);

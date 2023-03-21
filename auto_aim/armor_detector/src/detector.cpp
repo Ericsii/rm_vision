@@ -48,7 +48,7 @@ std::vector<Light> Detector::findLights(const cv::Mat & rbg_img, const cv::Mat &
   this->debug_lights.data.clear();
 
   for (const auto & contour : contours) {
-    if (contour.size() < 5) continue;
+    if (contour.size() < 5) {continue;}
 
     auto r_rect = cv::minAreaRect(contour);
     auto light = Light(r_rect);
@@ -57,7 +57,8 @@ std::vector<Light> Detector::findLights(const cv::Mat & rbg_img, const cv::Mat &
       auto rect = light.boundingRect();
       if (  // Avoid assertion failed
         0 <= rect.x && 0 <= rect.width && rect.x + rect.width <= rbg_img.cols && 0 <= rect.y &&
-        0 <= rect.height && rect.y + rect.height <= rbg_img.rows) {
+        0 <= rect.height && rect.y + rect.height <= rbg_img.rows)
+      {
         int sum_r = 0, sum_b = 0;
         auto roi = rbg_img(rect);
         // Iterate through the ROI
@@ -109,7 +110,7 @@ std::vector<Armor> Detector::matchLights(const std::vector<Light> & lights)
   // Loop all the pairing of lights
   for (auto light_1 = lights.begin(); light_1 != lights.end(); light_1++) {
     for (auto light_2 = light_1 + 1; light_2 != lights.end(); light_2++) {
-      if (light_1->color != detect_color || light_2->color != detect_color) continue;
+      if (light_1->color != detect_color || light_2->color != detect_color) {continue;}
 
       if (containLight(*light_1, *light_2, lights)) {
         continue;
@@ -132,11 +133,12 @@ bool Detector::containLight(
   auto bounding_rect = cv::boundingRect(points);
 
   for (const auto & test_light : lights) {
-    if (test_light.center == light_1.center || test_light.center == light_2.center) continue;
+    if (test_light.center == light_1.center || test_light.center == light_2.center) {continue;}
 
     if (
       bounding_rect.contains(test_light.top) || bounding_rect.contains(test_light.bottom) ||
-      bounding_rect.contains(test_light.center)) {
+      bounding_rect.contains(test_light.center))
+    {
       return true;
     }
   }
@@ -149,17 +151,17 @@ bool Detector::isArmor(Armor & armor)
   Light light_1 = armor.left_light;
   Light light_2 = armor.right_light;
   // Ratio of the length of 2 lights (short side / long side)
-  float light_length_ratio = light_1.length < light_2.length ? light_1.length / light_2.length
-                                                             : light_2.length / light_1.length;
+  float light_length_ratio = light_1.length < light_2.length ? light_1.length / light_2.length :
+    light_2.length / light_1.length;
   bool light_ratio_ok = light_length_ratio > a.min_light_ratio;
 
   // Distance between the center of 2 lights (unit : light length)
   float avg_light_length = (light_1.length + light_2.length) / 2;
   float center_distance = cv::norm(light_1.center - light_2.center) / avg_light_length;
   bool center_distance_ok = (a.min_small_center_distance < center_distance &&
-                             center_distance < a.max_small_center_distance) ||
-                            (a.min_large_center_distance < center_distance &&
-                             center_distance < a.max_large_center_distance);
+    center_distance < a.max_small_center_distance) ||
+    (a.min_large_center_distance < center_distance &&
+    center_distance < a.max_large_center_distance);
 
   // Angle of light center connection
   cv::Point2f diff = light_1.center - light_2.center;

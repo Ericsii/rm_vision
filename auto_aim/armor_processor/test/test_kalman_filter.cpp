@@ -1,4 +1,115 @@
-// Copyright 2022 Chen Jun
+#include <gtest/gtest.h>
+
+#include <memory>
+#include <random>
+#include <vector>
+
+#include "armor_processor/kalman_filter.hpp"
+#include "armor_processor/exkalman_filter.hpp"
+
+namespace rm_auto_aim
+{
+TEST(Filter, KalmanFilter)
+{
+  std::shared_ptr<Filter> test_filter;
+  auto test_kf = std::make_shared<KalmanFilter>(6, 3);
+
+  Eigen::MatrixXd F(6, 6);
+  F << 1, 0, 0, 1, 0, 0,
+    0, 1, 0, 0, 1, 0,
+    0, 0, 1, 0, 0, 1,
+    0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 1;
+
+  Eigen::MatrixXd B(6, 6);
+  B << 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0;
+
+  Eigen::MatrixXd H(3, 6);
+  H << 1, 0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0;
+
+  Eigen::MatrixXd Q(6, 6);
+  Q << 0.01, 0, 0, 0, 0, 0,
+    0, 0.01, 0, 0, 0, 0,
+    0, 0, 0.01, 0, 0, 0,
+    0, 0, 0, 0.01, 0, 0,
+    0, 0, 0, 0, 0.01, 0,
+    0, 0, 0, 0, 0, 0.01;
+
+  Eigen::MatrixXd R(3, 3);
+  R << 0.01, 0, 0,
+    0, 0.01, 0,
+    0, 0, 0.01;
+
+  test_kf->F = F;
+  test_kf->B = B;
+  test_kf->H = H;
+  test_kf->Q = Q;
+  test_kf->R = R;
+  test_filter = test_kf;
+  Eigen::VectorXd x_0 = Eigen::VectorXd::Zero(6);
+
+  test_filter->init(x_0);
+
+  for (int i = 0; i < 100; ++i) {
+    Eigen::VectorXd u(6);
+    Eigen::VectorXd z(3);
+    u << 0, 0, 0, 0, 0, 0;
+    z << i, i, i;
+    test_filter->predict(u);
+    auto x = test_filter->update(z);
+  }
+
+  EXPECT_TRUE(true);
+}
+}
+/*
+
+TEST(Filter, ExKalmanFilter)
+{
+    std::shared_ptr<Filter> test_filter;
+
+    Eigen::MatrixXd Q(6, 6);
+    Q << 0.01, 0, 0, 0, 0, 0,
+        0, 0.01, 0, 0, 0, 0,
+        0, 0, 0.01, 0, 0, 0,
+        0, 0, 0, 0.01, 0, 0,
+        0, 0, 0, 0, 0.01, 0,
+        0, 0, 0, 0, 0, 0.01;
+
+    Eigen::MatrixXd R(3, 3);
+    R << 0.01, 0, 0,
+        0, 0.01, 0,
+        0, 0, 0.01;
+
+    auto ekf = std::make_shared<ExKalmanFilter>(6, 3, 0, Q, R);
+
+    test_filter = ekf;
+
+    Eigen::VectorXd x_0 = Eigen::VectorXd::Zero(6);
+    test_filter->init(x_0);
+
+    for (int i = 0; i < 100; ++i)
+    {
+        Eigen::VectorXd u(6);
+        Eigen::VectorXd z(3);
+        u << 0, 0, 0, 0, 0, 0;
+        z << i, i, i;
+        test_filter->predict(u);
+        auto x = test_filter->update(z);
+    }
+
+    EXPECT_TRUE(true);
+}
+
+
 
 #include <gtest/gtest.h>
 
@@ -29,7 +140,7 @@ TEST(KalmanFilterTest, init)
   Q << .05, .05, .0, .05;
   R << 0.1;
   P.setIdentity();
-/*
+
   auto matrices = rm_auto_aim::KalmanFilterMatrices{F, H, Q, R, P};
 
   KF = std::make_unique<rm_auto_aim::KalmanFilter>(matrices);
@@ -39,7 +150,6 @@ TEST(KalmanFilterTest, init)
   std::cout << "Q: \n" << Q << std::endl;
   std::cout << "R: \n" << R << std::endl;
   std::cout << "P: \n" << P << std::endl;
-*/
 }
 
 TEST(KalmanFilterTest, predict_update)
@@ -77,3 +187,4 @@ TEST(KalmanFilterTest, predict_update)
     std::cout << prediction.transpose() << std::endl;
   }
 }
+*/

@@ -17,7 +17,7 @@ public:
    * @param dim_u 控制维度 default: 0
    */
   explicit Filter(const int dim_x, const int dim_z, const int dim_u = 0)
-   : dim_x(dim_x), dim_u(dim_u), dim_z(dim_z)
+  : dim_x(dim_x), dim_u(dim_u), dim_z(dim_z)
   {
     x_post = x_prior = Eigen::VectorXd::Zero(dim_x);
     P = Eigen::MatrixXd::Zero(dim_x, dim_x);
@@ -33,7 +33,7 @@ public:
    *
    * @param x0
    */
-  virtual void init(const Eigen::VectorXd& x0)
+  virtual void init(const Eigen::VectorXd & x0)
   {
     x_post = x0;
   }
@@ -44,7 +44,7 @@ public:
    * @param u Control input
    * @return Eigen::MatrixXd
    */
-  virtual Eigen::MatrixXd predict(const Eigen::VectorXd& u) = 0;
+  virtual Eigen::MatrixXd predict(const Eigen::VectorXd & u) = 0;
   /**
    * @brief Predict next state u = 0
    *
@@ -61,7 +61,7 @@ public:
    * @param z Measurement state
    * @return Eigen::MatrixXd
    */
-  virtual Eigen::MatrixXd update(const Eigen::VectorXd& z) = 0;
+  virtual Eigen::MatrixXd update(const Eigen::VectorXd & z) = 0;
 
 public:
   // System dimensions
