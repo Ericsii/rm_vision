@@ -1,21 +1,36 @@
+// Copyright 2023 Tingxu Chen
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 #define ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 
-// ROS
 #include <message_filters/subscriber.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/create_timer_ros.h>
 #include <tf2_ros/message_filter.h>
 #include <tf2_ros/transform_listener.h>
 
-#include <rclcpp/rclcpp.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
-
 // STD
 #include <memory>
 #include <string>
 #include <vector>
+
+// ROS
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "armor_processor/kalman_filter.hpp"
 #include "armor_processor/spin_observer.hpp"
@@ -41,7 +56,7 @@ private:
   rclcpp::Time last_time_;
 
   // Initial KF matrices
-  //KalmanFilterMatrices kf_matrices_;
+  // KalmanFilterMatrices kf_matrices_;
   double dt_;
 
   // Armor tracker

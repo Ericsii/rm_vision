@@ -1,16 +1,30 @@
+// Copyright 2023 Tingxu Chen
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <gtest/gtest.h>
 
+#include <iostream>
 #include <memory>
-#include <random>
-#include <vector>
 
 #include "armor_processor/kalman_filter.hpp"
 #include "armor_processor/exkalman_filter.hpp"
 
-namespace rm_auto_aim
-{
+
 TEST(Filter, KalmanFilter)
 {
+  using rm_auto_aim::Filter;
+  using rm_auto_aim::KalmanFilter;
   std::shared_ptr<Filter> test_filter;
   auto test_kf = std::make_shared<KalmanFilter>(6, 3);
 
@@ -21,14 +35,6 @@ TEST(Filter, KalmanFilter)
     0, 0, 0, 1, 0, 0,
     0, 0, 0, 0, 1, 0,
     0, 0, 0, 0, 0, 1;
-
-  Eigen::MatrixXd B(6, 6);
-  B << 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0;
 
   Eigen::MatrixXd H(3, 6);
   H << 1, 0, 0, 0, 0, 0,
@@ -49,7 +55,6 @@ TEST(Filter, KalmanFilter)
     0, 0, 0.01;
 
   test_kf->F = F;
-  test_kf->B = B;
   test_kf->H = H;
   test_kf->Q = Q;
   test_kf->R = R;
@@ -59,132 +64,70 @@ TEST(Filter, KalmanFilter)
   test_filter->init(x_0);
 
   for (int i = 0; i < 100; ++i) {
-    Eigen::VectorXd u(6);
     Eigen::VectorXd z(3);
-    u << 0, 0, 0, 0, 0, 0;
     z << i, i, i;
-    test_filter->predict(u);
+    test_filter->predict();
     auto x = test_filter->update(z);
   }
-
-  EXPECT_TRUE(true);
 }
-}
-/*
 
 TEST(Filter, ExKalmanFilter)
 {
-    std::shared_ptr<Filter> test_filter;
+  using rm_auto_aim::Filter;
+  using rm_auto_aim::ExKalmanFilter;
+  std::shared_ptr<Filter> test_filter;
 
-    Eigen::MatrixXd Q(6, 6);
-    Q << 0.01, 0, 0, 0, 0, 0,
-        0, 0.01, 0, 0, 0, 0,
-        0, 0, 0.01, 0, 0, 0,
-        0, 0, 0, 0.01, 0, 0,
-        0, 0, 0, 0, 0.01, 0,
-        0, 0, 0, 0, 0, 0.01;
+  Eigen::MatrixXd F(6, 6);
+  F << 1, 0, 0, 1, 0, 0,
+    0, 1, 0, 0, 1, 0,
+    0, 0, 1, 0, 0, 1,
+    0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 1;
 
-    Eigen::MatrixXd R(3, 3);
-    R << 0.01, 0, 0,
-        0, 0.01, 0,
-        0, 0, 0.01;
+  Eigen::MatrixXd H(3, 6);
+  H << 1, 0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0;
 
-    auto ekf = std::make_shared<ExKalmanFilter>(6, 3, 0, Q, R);
-
-    test_filter = ekf;
-
-    Eigen::VectorXd x_0 = Eigen::VectorXd::Zero(6);
-    test_filter->init(x_0);
-
-    for (int i = 0; i < 100; ++i)
+  ExKalmanFilter::StateTransFunction state_func =
+    [&F](const Eigen::VectorXd & u, const Eigen::VectorXd & x)
     {
-        Eigen::VectorXd u(6);
-        Eigen::VectorXd z(3);
-        u << 0, 0, 0, 0, 0, 0;
-        z << i, i, i;
-        test_filter->predict(u);
-        auto x = test_filter->update(z);
-    }
+      (void) u;
+      return F * x;
+    };
 
-    EXPECT_TRUE(true);
-}
+  ExKalmanFilter::JacobianStateTransFunction jaco_state_func =
+    [&F](const Eigen::VectorXd & u, const Eigen::VectorXd & x)
+    {
+      (void) x;
+      (void) u;
+      return F;
+    };
 
+  ExKalmanFilter::MeasureFunction measure_func = [&H](const Eigen::VectorXd & x)
+    {
+      return H * x;
+    };
 
+  ExKalmanFilter::JacobianMeasureFunction jaco_measure_func = [&H](const Eigen::VectorXd & x)
+    {
+      (void) x;
+      return H;
+    };
 
-#include <gtest/gtest.h>
+  test_filter = std::make_shared<ExKalmanFilter>(
+    state_func, measure_func, jaco_state_func,
+    jaco_measure_func, 6, 3);
 
-#include <memory>
-#include <random>
-#include <vector>
+  Eigen::VectorXd x_0 = Eigen::VectorXd::Zero(6);
 
-#include "armor_processor/kalman_filter.hpp"
+  test_filter->init(x_0);
 
-int N = 2;  // Number of states
-int M = 1;  // Number of measurements
-
-Eigen::MatrixXd F(N, N);  // state transition matrix
-Eigen::MatrixXd H(M, N);  // measurement matrix
-Eigen::MatrixXd Q(N, N);  // process noise covariance matrix
-Eigen::MatrixXd R(M, M);  // measurement noise covariance matrix
-Eigen::MatrixXd P(N, N);  // error estimate covariance matrix
-
-std::unique_ptr<rm_auto_aim::KalmanFilter> KF;
-
-TEST(KalmanFilterTest, init)
-{
-  // Test x = x0 + v*t
-  double dt = 1.0;
-  F << 1, dt, 0, 1;
-  H << 1, 0;
-
-  Q << .05, .05, .0, .05;
-  R << 0.1;
-  P.setIdentity();
-
-  auto matrices = rm_auto_aim::KalmanFilterMatrices{F, H, Q, R, P};
-
-  KF = std::make_unique<rm_auto_aim::KalmanFilter>(matrices);
-
-  std::cout << "F: \n" << F << std::endl;
-  std::cout << "H: \n" << H << std::endl;
-  std::cout << "Q: \n" << Q << std::endl;
-  std::cout << "R: \n" << R << std::endl;
-  std::cout << "P: \n" << P << std::endl;
-}
-
-TEST(KalmanFilterTest, predict_update)
-{
-  std::vector<double> measurements{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-
-  // Add noise
-  std::default_random_engine e;
-  std::uniform_real_distribution<double> u(-0.1, 0.1);
-  std::cout << "measurement:" << std::endl;
-  for (auto & measurement : measurements) {
-    measurement += u(e);
-    std::cout << measurement << std::endl;
-  }
-
-  // Init
-  Eigen::VectorXd x0(N);
-  x0 << 0, 0;
-  KF->init(x0);
-
-  // Estimate
-  std::cout << "Estimate based on measurement:" << std::endl;
-  Eigen::VectorXd measurement_vector(M);
-  for (const auto & measurement : measurements) {
-    KF->predict(F);
-    measurement_vector << measurement;
-    auto result = KF->update(measurement_vector);
-    std::cout << result.transpose() << std::endl;
-  }
-
-  // Predict only
-  std::cout << "Predict only:" << std::endl;
-  for (size_t i = 0; i < 10; ++i) {
-    auto prediction = KF->predict(F);
-    std::cout << prediction.transpose() << std::endl;
+  for (int i = 0; i < 100; ++i) {
+    Eigen::VectorXd z(3);
+    z << i, i, i;
+    test_filter->predict();
+    auto x = test_filter->update(z);
   }
 }
-*/
