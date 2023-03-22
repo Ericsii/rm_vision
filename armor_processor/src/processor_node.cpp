@@ -182,6 +182,7 @@ void ArmorProcessorNode::armorsCallback(
     // Update state
     tracker_->update(armors_msg, dt_);
 
+    /* *INDENT-OFF* */
     if (tracker_->tracker_state == Tracker::DETECTING) {
       target_msg.tracking = false;
     } else if (tracker_->tracker_state == Tracker::TRACKING ||
@@ -189,6 +190,7 @@ void ArmorProcessorNode::armorsCallback(
       target_msg.tracking = true;
       target_msg.id = tracker_->tracking_id;
     }
+    /* *INDENT-ON* */
   }
 
   if (target_msg.tracking) {
