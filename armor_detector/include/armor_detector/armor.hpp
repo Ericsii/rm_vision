@@ -4,11 +4,11 @@
 #ifndef ARMOR_DETECTOR__ARMOR_HPP_
 #define ARMOR_DETECTOR__ARMOR_HPP_
 
-#include <opencv2/core.hpp>
-
 // STL
 #include <algorithm>
 #include <string>
+
+#include <opencv2/core.hpp>
 
 namespace rm_auto_aim
 {
