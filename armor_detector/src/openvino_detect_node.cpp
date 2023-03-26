@@ -35,6 +35,8 @@ OpenVINODetectNode::OpenVINODetectNode(const rclcpp::NodeOptions & options)
     return;
   }
 
+  auto use_sensor_data_qos = this->declare_parameter("use_sensor_data_qos", false);
+
   camera_name_ = this->declare_parameter("detector.camera_name", "camera");
   transport_type_ =
     this->declare_parameter("detector.subscribe_compressed", false) ? "compressed" : "raw";
@@ -82,7 +84,7 @@ OpenVINODetectNode::OpenVINODetectNode(const rclcpp::NodeOptions & options)
 
   // Camera handler
   cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-    camera_name_ + "/camera_info", rclcpp::SensorDataQoS(),
+    camera_name_ + "/camera_info", use_sensor_data_qos ? rclcpp::SensorDataQoS() : rclcpp::QoS(1),
     [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
       this->cam_info_ = std::make_shared<sensor_msgs::msg::CameraInfo>(*camera_info);
       this->measure_tool_ =
@@ -106,7 +108,8 @@ OpenVINODetectNode::OpenVINODetectNode(const rclcpp::NodeOptions & options)
     image_transport::create_subscription(
       this, camera_name_ + "/image_raw",
       std::bind(&OpenVINODetectNode::img_callback, this, std::placeholders::_1),
-      transport_type_, rmw_qos_profile_sensor_data));
+      transport_type_,
+      use_sensor_data_qos ? rmw_qos_profile_sensor_data : rmw_qos_profile_default));
   RCLCPP_INFO(this->get_logger(), "Subscribing to %s", img_sub_->getTopic().c_str());
 
   RCLCPP_INFO(this->get_logger(), "Initializing finished.");
@@ -170,6 +173,7 @@ void OpenVINODetectNode::openvino_detect_callback(
 {
   if (measure_tool_ == nullptr) {
     RCLCPP_WARN(this->get_logger(), "No camera_info recieve yet.");
+    return;
   }
 
   auto timestamp = rclcpp::Time(timestamp_nanosec);

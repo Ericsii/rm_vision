@@ -173,8 +173,6 @@ void OpenVINODetector::init()
     ov_core_->compile_model(
       model, device_name_,
       ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY)));
-
-  infer_request_ = std::make_unique<ov::InferRequest>(compiled_model_->create_infer_request());
 }
 
 std::future<bool> OpenVINODetector::push_input(const cv::Mat & rgb_img, int64_t timestamp_nanosec)
@@ -217,10 +215,11 @@ bool OpenVINODetector::process_callback(
     blob.ptr(0));
 
   // Start inference
-  infer_request_->set_input_tensor(input_tensor);
-  infer_request_->infer();
+  auto infer_request = compiled_model_->create_infer_request();
+  infer_request.set_input_tensor(input_tensor);
+  infer_request.infer();
 
-  auto output = infer_request_->get_output_tensor();
+  auto output = infer_request.get_output_tensor();
 
   // Process output data
   auto output_shape = output.get_shape();

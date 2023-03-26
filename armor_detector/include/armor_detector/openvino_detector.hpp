@@ -90,11 +90,9 @@ private:
   float nms_threshold_;
 
   DetectorCallback infer_callback_;
-  std::mutex infer_mutex_;
 
   std::unique_ptr<ov::Core> ov_core_;
   std::unique_ptr<ov::CompiledModel> compiled_model_;
-  std::unique_ptr<ov::InferRequest> infer_request_;
 };
 }  // namespace rm_auto_aim
 

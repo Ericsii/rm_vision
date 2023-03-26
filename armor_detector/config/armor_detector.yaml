@@ -1,5 +1,7 @@
 /**:
   ros__parameters:
+    use_sensor_data_qos: false
+
     detector:
       camera_name: 'camera'
       subscribe_compressed: false
