@@ -22,8 +22,8 @@
 
 namespace rm_auto_aim
 {
-OpenVINODetectNode::OpenVINODetectNode(const rclcpp::NodeOptions & options)
-: Node("openvino_detect_node", options)
+OpenVINODetectNode::OpenVINODetectNode(rclcpp::NodeOptions options)
+: Node("openvino_detect_node", options.use_intra_process_comms(true))
 {
   RCLCPP_INFO(this->get_logger(), "Initializing detect node");
 

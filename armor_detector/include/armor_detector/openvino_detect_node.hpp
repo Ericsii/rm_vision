@@ -40,7 +40,7 @@ class OpenVINODetectNode : public rclcpp::Node
 {
 public:
   OpenVINODetectNode(
-    const rclcpp::NodeOptions & options = rclcpp::NodeOptions().use_intra_process_comms(true));
+    rclcpp::NodeOptions options);
 
 private:
   void init_detector();
