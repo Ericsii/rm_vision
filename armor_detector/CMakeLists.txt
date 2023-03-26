@@ -83,7 +83,7 @@ install(DIRECTORY include/
 )
 
 # Install  directories
-install(DIRECTORY model
+install(DIRECTORY launch config model
   DESTINATION share/${PROJECT_NAME}
 )
 

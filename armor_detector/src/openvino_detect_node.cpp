@@ -31,7 +31,7 @@ OpenVINODetectNode::OpenVINODetectNode(const rclcpp::NodeOptions & options)
   detector_ = nullptr;
   this->init_detector();
   if (!detector_) {
-    RCLCPP_INFO(this->get_logger(), "Failed to initialize OpenVINO");
+    RCLCPP_ERROR(this->get_logger(), "Failed to initialize OpenVINO");
     return;
   }
 
@@ -107,6 +107,7 @@ OpenVINODetectNode::OpenVINODetectNode(const rclcpp::NodeOptions & options)
       this, camera_name_ + "/image_raw",
       std::bind(&OpenVINODetectNode::img_callback, this, std::placeholders::_1),
       transport_type_, rmw_qos_profile_sensor_data));
+  RCLCPP_INFO(this->get_logger(), "Subscribing to %s", img_sub_->getTopic().c_str());
 
   RCLCPP_INFO(this->get_logger(), "Initializing finished.");
 }
@@ -132,8 +133,10 @@ void OpenVINODetectNode::init_detector()
     return;
   }
 
+  RCLCPP_INFO(this->get_logger(), "Model path: %s", resolved_path.c_str());
+
   // Create detector
-  auto detector_ = std::make_unique<OpenVINODetector>(
+  detector_ = std::make_unique<OpenVINODetector>(
     resolved_path, device_type, conf_threshold,
     top_k, nms_threshold);
   // Set detect callback
