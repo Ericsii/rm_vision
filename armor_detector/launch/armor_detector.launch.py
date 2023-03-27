@@ -39,8 +39,7 @@ def generate_launch_description():
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
-        'namespace', default_value='', description='Namespace'
-    )
+        'namespace', default_value='', description='Namespace')
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name', default_value='armor_detector', description='Container name')
     declare_config_file_cmd = DeclareLaunchArgument(
