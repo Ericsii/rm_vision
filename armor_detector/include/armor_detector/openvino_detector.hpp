@@ -33,6 +33,13 @@
 namespace rm_auto_aim
 {
 
+struct GridAndStride
+{
+  int grid0;
+  int grid1;
+  int stride;
+};
+
 class OpenVINODetector
 {
 public:
@@ -88,6 +95,8 @@ private:
   float conf_threshold_;
   int top_k_;
   float nms_threshold_;
+  std::vector<int> strides_;
+  std::vector<GridAndStride> grid_strides_;
 
   DetectorCallback infer_callback_;
 

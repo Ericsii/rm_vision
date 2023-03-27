@@ -194,7 +194,9 @@ void OpenVINODetectNode::openvino_detect_callback(
     cv::Point3f target_position;
     cv::Mat target_rvec;
 
-    measure_tool_->calc_armor_target(obj, target_position, target_rvec);
+    if (!measure_tool_->calc_armor_target(obj, target_position, target_rvec)) {
+      RCLCPP_WARN(this->get_logger(), "Calc target failed.");
+    }
 
     armor.color = static_cast<int>(obj.number);
     armor.number = static_cast<int>(obj.number);
@@ -212,10 +214,10 @@ void OpenVINODetectNode::openvino_detect_callback(
       }
 
       // Draw armor
-      for (size_t i = 0; i < obj.pts.size(); ++i) {
+      for (size_t i = 0; i < 4; ++i) {
         cv::line(
-          debug_img, cv::Point2i(obj.pts[i]), cv::Point2i(obj.pts[(i + 1) % obj.pts.size()]),
-          cv::Scalar(255, 48, 48));
+          debug_img, obj.pts[i], obj.pts[(i + 1) % 4],
+          cv::Scalar(255, 48, 48), 2);
       }
 
       std::string armor_color;
@@ -242,11 +244,6 @@ void OpenVINODetectNode::openvino_detect_callback(
         debug_img, armor_key, cv::Point2i(obj.pts[0]), cv::FONT_HERSHEY_SIMPLEX, 0.8,
         cv::Scalar(0, 255, 255),
         2);
-
-      cv::circle(
-        debug_img, cv::Point2i(
-          cam_info_->width / 2.,
-          cam_info_->height / 2.), 5, cv::Scalar(255, 0, 0), 2);
     }
   }
 
@@ -257,6 +254,19 @@ void OpenVINODetectNode::openvino_detect_callback(
       // Avoid debug_mode change in processing
       return;
     }
+
+    cv::circle(
+      debug_img, cv::Point2i(
+        cam_info_->width / 2.,
+        cam_info_->height / 2.), 5, cv::Scalar(255, 0, 0), 2);
+
+    auto end = this->get_clock()->now();
+    auto duration = end.seconds() - timestamp.seconds();
+    std::string letency = fmt::format("Latency: {:.3f}ms", duration * 1000);
+    cv::putText(
+      debug_img, letency, cv::Point2i(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8,
+      cv::Scalar(0, 255, 255),
+      2);
 
     debug_img_pub_.publish(cv_bridge::CvImage(armors_msg.header, "rgb8", debug_img).toImageMsg());
   }
