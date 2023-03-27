@@ -1,0 +1,10 @@
+find_package(ament_cmake_gtest REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+
+ament_add_gtest(test_openvino_detector test_openvino_detector.cpp)
+target_link_libraries(test_openvino_detector ${PROJECT_NAME})
+ament_target_dependencies(test_openvino_detector ament_index_cpp)
+
+ament_add_gtest(test_node_startup test_node_startup.cpp)
+target_link_libraries(test_node_startup ${PROJECT_NAME})
+ament_target_dependencies(test_node_startup ament_index_cpp)

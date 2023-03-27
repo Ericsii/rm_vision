@@ -2,26 +2,24 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>armor_detector</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>Armor Detector package</description>
-  <maintainer email="915800506@qq.com">rmnuc</maintainer>
-  <license>MIT</license>
+  <maintainer email="ericc_feng@qq.com">Yunlong Feng</maintainer>
+  <license>Apache-2.0</license>
 
-  <!-- buildtool_depend: dependencies of the build process -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- depend: build, export, and execution dependency -->
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
-  <depend>message_filters</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
   <depend>image_transport_plugins</depend>
   <depend>auto_aim_interfaces</depend>
   <depend>vision_opencv</depend>
+  <depend>rmoss_util</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

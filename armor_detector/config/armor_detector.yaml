@@ -1,0 +1,15 @@
+/**:
+  ros__parameters:
+    use_sensor_data_qos: false
+
+    detector:
+      camera_name: 'camera'
+      subscribe_compressed: false
+      debug_mode: true
+
+      # Model 
+      model_path: 'package://armor_detector/model/opt-1208-001.onnx'
+      device_type: 'AUTO'
+      confidence_threshold: 0.25
+      top_k: 128
+      nms_threshold: 0.3
