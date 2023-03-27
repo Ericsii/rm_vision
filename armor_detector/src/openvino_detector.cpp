@@ -23,8 +23,10 @@ static const int INPUT_W = 416;        // Width of input
 static const int INPUT_H = 416;        // Height of input
 static constexpr int NUM_CLASSES = 8;  // Number of classes
 static constexpr int NUM_COLORS = 4;   // Number of color
+static constexpr float MERGE_CONF_ERROR = 0.15;
+static constexpr float MERGE_MIN_IOU = 0.9;
 
-cv::Mat letterbox(
+static cv::Mat letterbox(
   const cv::Mat & img, Eigen::Matrix3f & transform_matrix,
   std::vector<int> new_shape = {INPUT_W, INPUT_H})
 {
@@ -140,6 +142,62 @@ static void generate_proposals(
   }
 }
 
+/**
+ * @brief Calculate intersection area between two objects.
+ * @param a Object a.
+ * @param b Object b.
+ * @return Area of intersection.
+ */
+static inline float intersection_area(const ArmorObject & a, const ArmorObject & b)
+{
+  cv::Rect_<float> inter = a.box & b.box;
+  return inter.area();
+}
+
+static void nms_merge_sorted_bboxes(
+  std::vector<ArmorObject> & faceobjects, std::vector<int> & indices,
+  float nms_threshold)
+{
+  indices.clear();
+
+  const int n = faceobjects.size();
+
+  std::vector<float> areas(n);
+  for (int i = 0; i < n; i++) {
+    areas[i] = faceobjects[i].box.area();
+  }
+
+  for (int i = 0; i < n; i++) {
+    ArmorObject & a = faceobjects[i];
+
+    int keep = 1;
+    for (size_t j = 0; j < indices.size(); j++) {
+      ArmorObject & b = faceobjects[indices[j]];
+
+      // intersection over union
+      float inter_area = intersection_area(a, b);
+      float union_area = areas[i] + areas[indices[j]] - inter_area;
+      float iou = inter_area / union_area;
+      if (iou > nms_threshold || isnan(iou)) {
+        keep = 0;
+        // Stored for Merge
+        if (a.number == b.number && a.color == b.color &&
+          iou > MERGE_MIN_IOU && abs(a.prob - b.prob) < MERGE_CONF_ERROR)
+        {
+          for (int i = 0; i < 4; i++) {
+            b.pts.push_back(a.pts[i]);
+          }
+        }
+        // cout<<b.pts_x.size()<<endl;
+      }
+    }
+
+    if (keep) {
+      indices.push_back(i);
+    }
+  }
+}
+
 OpenVINODetector::OpenVINODetector(
   const std::filesystem::path & model_path, const std::string & device_name,
   float conf_threshold, int top_k, float nms_threshold, bool auto_init)
@@ -237,13 +295,44 @@ bool OpenVINODetector::process_callback(
     objs_tmp, scores, rects, output_buffer, transform_matrix,
     this->conf_threshold_);
 
-  // NMS & TopK
-  cv::dnn::NMSBoxes(
-    rects, scores, this->conf_threshold_, this->nms_threshold_, indices, 1.0,
-    this->top_k_);
-  for (size_t i = 0; i < indices.size(); ++i) {
-    objs_result.push_back(std::move(objs_tmp[i]));
+  // TopK
+  std::sort(
+    objs_tmp.begin(), objs_tmp.end(), [](const ArmorObject & a, const ArmorObject & b) {
+      return a.prob > b.prob;
+    });
+  if (objs_tmp.size() > static_cast<size_t>(this->top_k_)) {
+    objs_tmp.resize(this->top_k_);
   }
+
+  nms_merge_sorted_bboxes(objs_tmp, indices, this->nms_threshold_);
+
+  for (size_t i = 0; i < indices.size(); i++) {
+    objs_result.push_back(std::move(objs_tmp[indices[i]]));
+
+    if (objs_result[i].pts.size() >= 8) {
+      auto N = objs_result[i].pts.size();
+      cv::Point2f pts_final[4];
+
+      for (size_t j = 0; j < N; j++) {
+        pts_final[j % 4] += objs_result[i].pts[j];
+      }
+
+      objs_result[i].pts.resize(4);
+      for (int j = 0; j < 4; j++) {
+        pts_final[j].x /= static_cast<float>(N) / 4.0;
+        pts_final[j].y /= static_cast<float>(N) / 4.0;
+        objs_result[i].pts[j] = pts_final[j];
+      }
+    }
+  }
+
+  // NMS & TopK
+  // cv::dnn::NMSBoxes(
+  //   rects, scores, this->conf_threshold_, this->nms_threshold_, indices, 1.0,
+  //   this->top_k_);
+  // for (size_t i = 0; i < indices.size(); ++i) {
+  //   objs_result.push_back(std::move(objs_tmp[i]));
+  // }
 
   // Call callback function
   if (this->infer_callback_) {
