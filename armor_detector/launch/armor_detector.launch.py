@@ -31,12 +31,16 @@ def generate_launch_description():
         package_path, 'config', 'armor_detector.yaml')
 
     # Declare the launch config
+    namespace = LaunchConfiguration('namespace')
     config_file = LaunchConfiguration('config_file')
     container_name = LaunchConfiguration('container_name')
     use_eternal_container = LaunchConfiguration('use_eternal_container')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Declare the launch arguments
+    declare_namespace_cmd = DeclareLaunchArgument(
+        'namespace', default_value='', description='Namespace'
+    )
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name', default_value='armor_detector', description='Container name')
     declare_config_file_cmd = DeclareLaunchArgument(
@@ -64,12 +68,14 @@ def generate_launch_description():
                 plugin='rm_auto_aim::OpenVINODetectNode',
                 name='armor_detector',
                 parameters=[config_file,
-                            {'use_sim_time': use_sim_time}]
+                            {'use_sim_time': use_sim_time}],
+                namespace=namespace
             )
         ]
     )
 
     ld = LaunchDescription()
+    ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_config_file_cmd)
     ld.add_action(declare_use_eternal_container_cmd)
