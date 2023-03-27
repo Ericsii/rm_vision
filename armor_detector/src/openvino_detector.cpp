@@ -85,28 +85,26 @@ static cv::Mat letterbox(
  * @param strides A vector of stride.
  * @param grid_strides Grid stride generated in this function.
  */
-static void generate_grids_and_stride(const int target_w, const int target_h,
-                                        std::vector<int>& strides, std::vector<GridAndStride>& grid_strides)
+static void generate_grids_and_stride(
+  const int target_w, const int target_h,
+  std::vector<int> & strides, std::vector<GridAndStride> & grid_strides)
 {
-    for (auto stride : strides)
-    {
-        int num_grid_w = target_w / stride;
-        int num_grid_h = target_h / stride;
+  for (auto stride : strides) {
+    int num_grid_w = target_w / stride;
+    int num_grid_h = target_h / stride;
 
-        for (int g1 = 0; g1 < num_grid_h; g1++)
-        {
-            for (int g0 = 0; g0 < num_grid_w; g0++)
-            {
-              grid_strides.emplace_back(GridAndStride{g0, g1, stride});
-            }
-        }
+    for (int g1 = 0; g1 < num_grid_h; g1++) {
+      for (int g0 = 0; g0 < num_grid_w; g0++) {
+        grid_strides.emplace_back(GridAndStride{g0, g1, stride});
+      }
     }
+  }
 }
 
 static void generate_proposals(
   std::vector<ArmorObject> & output_objs, std::vector<float> & scores,
   std::vector<cv::Rect> & rects, const cv::Mat & output_buffer,
-  const Eigen::Matrix<float, 3, 3> & transform_matrix, float conf_threshold, 
+  const Eigen::Matrix<float, 3, 3> & transform_matrix, float conf_threshold,
   std::vector<GridAndStride> grid_strides)
 {
   const int num_anchors = grid_strides.size();
@@ -324,7 +322,7 @@ bool OpenVINODetector::process_callback(
   std::vector<cv::Rect> rects;
   std::vector<float> scores;
   std::vector<int> indices;
-  
+
   // Parse YOLO output
   generate_proposals(
     objs_tmp, scores, rects, output_buffer, transform_matrix,

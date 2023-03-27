@@ -75,8 +75,8 @@ bool MonoMeasureTool::solve_pnp(
   cv::Mat trans = cv::Mat::zeros(3, 1, CV_64FC1);
   cv::Mat r;  // 旋转向量
   bool res = cv::solvePnP(
-                        points3d, points2d, camera_intrinsic_, camera_distortion_, r, trans, false,
-                        pnp_method);
+    points3d, points2d, camera_intrinsic_, camera_distortion_, r, trans, false,
+    pnp_method);
   rvec = r.clone();
   position = cv::Point3f(trans);
   return res;
