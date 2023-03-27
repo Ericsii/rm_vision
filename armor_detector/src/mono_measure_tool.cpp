@@ -74,12 +74,12 @@ bool MonoMeasureTool::solve_pnp(
   // cv::Mat rot = cv::Mat::eye(3, 3, CV_64FC1);
   cv::Mat trans = cv::Mat::zeros(3, 1, CV_64FC1);
   cv::Mat r;  // 旋转向量
-  cv::solvePnP(
-    points3d, points2d, camera_intrinsic_, camera_distortion_, r, trans, false,
-    pnp_method);
+  bool res = cv::solvePnP(
+                        points3d, points2d, camera_intrinsic_, camera_distortion_, r, trans, false,
+                        pnp_method);
   rvec = r.clone();
   position = cv::Point3f(trans);
-  return true;
+  return res;
 }
 
 // refer to :http://www.cnblogs.com/singlex/p/pose_estimation_1_1.html

@@ -71,41 +71,73 @@ static cv::Mat letterbox(
 
   // Add border
   cv::copyMakeBorder(
-    resized_img, resized_img, top, bottom, left, right, 0, cv::Scalar(
+    resized_img, resized_img, top, bottom, left, right, cv::BORDER_CONSTANT, cv::Scalar(
       114, 114,
       114));
 
   return resized_img;
 }
 
+/**
+ * @brief Generate grids and stride.
+ * @param target_w Width of input.
+ * @param target_h Height of input.
+ * @param strides A vector of stride.
+ * @param grid_strides Grid stride generated in this function.
+ */
+static void generate_grids_and_stride(const int target_w, const int target_h,
+                                        std::vector<int>& strides, std::vector<GridAndStride>& grid_strides)
+{
+    for (auto stride : strides)
+    {
+        int num_grid_w = target_w / stride;
+        int num_grid_h = target_h / stride;
+
+        for (int g1 = 0; g1 < num_grid_h; g1++)
+        {
+            for (int g0 = 0; g0 < num_grid_w; g0++)
+            {
+              grid_strides.emplace_back(GridAndStride{g0, g1, stride});
+            }
+        }
+    }
+}
+
 static void generate_proposals(
   std::vector<ArmorObject> & output_objs, std::vector<float> & scores,
   std::vector<cv::Rect> & rects, const cv::Mat & output_buffer,
-  const Eigen::Matrix<float, 3, 3> & transform_matrix, float conf_threshold)
+  const Eigen::Matrix<float, 3, 3> & transform_matrix, float conf_threshold, 
+  std::vector<GridAndStride> grid_strides)
 {
-  for (int i = 0; i < output_buffer.rows; ++i) {
-    float confidence = output_buffer.at<float>(i, 8);
+  const int num_anchors = grid_strides.size();
+
+  for (int anchor_idx = 0; anchor_idx < num_anchors; anchor_idx++) {
+    float confidence = output_buffer.at<float>(anchor_idx, 8);
     if (confidence < conf_threshold) {
       continue;
     }
 
+    const int grid0 = grid_strides[anchor_idx].grid0;
+    const int grid1 = grid_strides[anchor_idx].grid1;
+    const int stride = grid_strides[anchor_idx].stride;
+
     double color_score, num_score;
     cv::Point color_id, num_id;
-    cv::Mat color_scores = output_buffer.row(i).colRange(9, 9 + NUM_COLORS);
+    cv::Mat color_scores = output_buffer.row(anchor_idx).colRange(9, 9 + NUM_COLORS);
     cv::Mat num_scores =
-      output_buffer.row(i).colRange(9 + NUM_COLORS, 9 + NUM_COLORS + NUM_CLASSES);
+      output_buffer.row(anchor_idx).colRange(9 + NUM_COLORS, 9 + NUM_COLORS + NUM_CLASSES);
     // Argmax
     cv::minMaxLoc(color_scores, NULL, &color_score, NULL, &color_id);
     cv::minMaxLoc(num_scores, NULL, &num_score, NULL, &num_id);
 
-    float x_1 = output_buffer.at<float>(i, 0);
-    float y_1 = output_buffer.at<float>(i, 1);
-    float x_2 = output_buffer.at<float>(i, 2);
-    float y_2 = output_buffer.at<float>(i, 3);
-    float x_3 = output_buffer.at<float>(i, 4);
-    float y_3 = output_buffer.at<float>(i, 5);
-    float x_4 = output_buffer.at<float>(i, 6);
-    float y_4 = output_buffer.at<float>(i, 7);
+    float x_1 = (output_buffer.at<float>(anchor_idx, 0) + grid0) * stride;
+    float y_1 = (output_buffer.at<float>(anchor_idx, 1) + grid1) * stride;
+    float x_2 = (output_buffer.at<float>(anchor_idx, 2) + grid0) * stride;
+    float y_2 = (output_buffer.at<float>(anchor_idx, 3) + grid1) * stride;
+    float x_3 = (output_buffer.at<float>(anchor_idx, 4) + grid0) * stride;
+    float y_3 = (output_buffer.at<float>(anchor_idx, 5) + grid1) * stride;
+    float x_4 = (output_buffer.at<float>(anchor_idx, 6) + grid0) * stride;
+    float y_4 = (output_buffer.at<float>(anchor_idx, 7) + grid1) * stride;
 
     Eigen::Matrix<float, 3, 4> apex_norm;
     Eigen::Matrix<float, 3, 4> apex_dst;
@@ -122,7 +154,7 @@ static void generate_proposals(
 
     ArmorObject obj;
 
-    obj.pts.reserve(4);
+    obj.pts.resize(4);
 
     obj.pts[0] = cv::Point2f(apex_dst(0, 0), apex_dst(1, 0));
     obj.pts[1] = cv::Point2f(apex_dst(0, 1), apex_dst(1, 1));
@@ -231,6 +263,9 @@ void OpenVINODetector::init()
     ov_core_->compile_model(
       model, device_name_,
       ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY)));
+
+  strides_ = {8, 16, 32};
+  generate_grids_and_stride(INPUT_W, INPUT_H, strides_, grid_strides_);
 }
 
 std::future<bool> OpenVINODetector::push_input(const cv::Mat & rgb_img, int64_t timestamp_nanosec)
@@ -289,11 +324,11 @@ bool OpenVINODetector::process_callback(
   std::vector<cv::Rect> rects;
   std::vector<float> scores;
   std::vector<int> indices;
-
+  
   // Parse YOLO output
   generate_proposals(
     objs_tmp, scores, rects, output_buffer, transform_matrix,
-    this->conf_threshold_);
+    this->conf_threshold_, this->grid_strides_);
 
   // TopK
   std::sort(
