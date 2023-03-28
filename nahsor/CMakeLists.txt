@@ -1,26 +1,19 @@
 cmake_minimum_required(VERSION 3.8)
 project(rm_nahsor)
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-# add_compile_options(-std=c++11)
+
 add_compile_options(-Wno-dev)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 set( CMAKE_BUILD_TYPE Release )
-# if(CMAKE_BUILD_TYPE MATCHES "Debug")
-#   add_definitions("-DRM_DEBUG_MODE")
-# endif()
-
-# set(g2o_DIR "/usr/local/lib/cmake/g2o/")
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
-SET( G2O_ROOT /usr/local/include/g2o )
 # find dependencies
-find_package(Protobuf REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Ceres REQUIRED)
@@ -29,12 +22,11 @@ find_package(eigen3_cmake_module REQUIRED)
 
 FIND_PACKAGE( CSparse  REQUIRED)
 INCLUDE_DIRECTORIES( ${G2O_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR} )
-include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-set(Protobuf_PROTOC_EXECUTABLE "/usr/local/bin/protoc")
 set(dependencies
   rclcpp
   rclcpp_components
+  cv_bridge
   OpenCV
   G2O
   Eigen3

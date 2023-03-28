@@ -16,26 +16,11 @@
 
 #include <cv_bridge/cv_bridge.h>
 
-#include "rm_interfaces/srv/set_mode.hpp"
-#include "rm_interfaces/msg/gimbal.hpp"
-#include "rm_interfaces/msg/gimbal_cmd.hpp"
-#include "rm_nahsor/nahsor_prediction.hpp"
-#include "rm_cam/cam_client.hpp"
-#include "rm_nahsor/nahsor.hpp"
-#include "rm_util/measure_tool.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include <geometry_msgs/msg/point_stamped.hpp>
-#include "rm_cam/wrapper_client.hpp"
 #include "rm_util/coordinate_tool.hpp"
-// #include "rm_trajectory/trajectory_pitch.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-// #include "rm_trajectory/trajectory_gimbal.hpp"
-// #include "rm_trajectory/trajectory_gravity.hpp"
-#include "rm_trajectory/gravity_solver.hpp"
-#include "rm_trajectory/database_solver.hpp"
-#include "rm_trajectory/gravity_nofriction_solver.hpp"
-#include "rm_interfaces/srv/set_color.hpp"
 
 namespace nahsor
 {
