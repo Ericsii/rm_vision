@@ -1,0 +1,8 @@
+nahsor:
+    ros__parameters:
+        debug: true
+        color: "blue"
+        imu_name: "imu/data_raw"
+        camera_name: "mv_camera"
+        auto_start: true
+        best_effort_qos: true

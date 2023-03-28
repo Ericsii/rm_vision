@@ -1,0 +1,5 @@
+#rm_nahsor
+## mode
+0xaa: 停止
+0xbb: 小符模式
+0xcc: 大符模式

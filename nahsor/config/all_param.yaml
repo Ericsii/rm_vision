@@ -1,0 +1,51 @@
+##若未设置udev权限，则需要进入root用户才能启动相机结点（除虚拟相机外）
+##相机
+mindvision_camera:
+    ros__parameters:
+        camera_name: 'mv_camera'
+        sn: '049080710063'
+        config_path: './rm_nahsor/config/048021610069.Config'
+        camera_info_url: 'package://rm_nahsor/config/ost.yaml'
+        fps: 150
+        best_effort_qos: true
+
+##串口
+base:
+    ros__parameters:
+        serial_name: '/dev/ttySerial'
+        imu_name: "imu/data_raw"
+        serial_send: True
+        serial_recv: True
+        serial_bps: 1152000
+        debug: True
+        custom_qos: false
+        set_service_name: ['auto_aim','nahsor']
+
+##自瞄
+nahsor_node:
+    ros__parameters:
+        # armor_is_red: true
+        camera_name: "mv_camera"
+        imu_name: "imu/data_raw"
+        best_effort_qos: true
+        color: "red"
+        auto_start: true
+        shoot_delay: 0.35
+        yaw_offset: 0.
+        pitch_offset: 1.
+        small_v: 2.5
+        
+        # 图像处理的阈值
+        dilate_size: 4
+        core_size: 3
+        erode_size: 2
+        low_red: [156., 100., 130.]
+        up_red: [180., 255., 255.]
+        low_red2: [0., 100., 130.]
+        up_red2: [34., 255., 255.]
+        low_blue: [80., 150., 180.]
+        up_blue: [124., 255., 255.]
+        armor_size_thre_: [500., 1000.]
+        R_size_thre_: [400., 800.]
+        max_r_angle_: 0.3
+
