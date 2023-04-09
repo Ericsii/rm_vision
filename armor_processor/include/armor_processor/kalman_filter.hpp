@@ -25,9 +25,9 @@ class KalmanFilter : public Filter
 public:
   explicit KalmanFilter(const int dim_x, const int dim_z, const int dim_u = 0);
 
-  Eigen::MatrixXd predict(const Eigen::VectorXd & u) override;
+  Eigen::VectorXd predict(const Eigen::VectorXd & u) override;
 
-  Eigen::MatrixXd update(const Eigen::VectorXd & z) override;
+  Eigen::VectorXd update(const Eigen::VectorXd & z) override;
 
 public:
   Eigen::MatrixXd F, H, B;

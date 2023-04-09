@@ -42,38 +42,6 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   Eigen::MatrixXd R(3, 3);
   R = Eigen::MatrixXd::Identity(3, 3) * sigma_R;
 
-  /*
-   // Kalman Filter initial matrix
-   // A - state transition matrix
-   // clang-format off
-   Eigen::Matrix<double, 6, 6> f;
-   f <<  1,  0,  0, dt_, 0,  0,
-         0,  1,  0,  0, dt_, 0,
-         0,  0,  1,  0,  0, dt_,
-         0,  0,  0,  1,  0,  0,
-         0,  0,  0,  0,  1,  0,
-         0,  0,  0,  0,  0,  1;
-   // clang-format on
-
-   // H - measurement matrix
-   Eigen::Matrix<double, 3, 6> h;
-   h.setIdentity();
-
-   // Q - process noise covariance matrix
-   Eigen::DiagonalMatrix<double, 6> q;
-   q.diagonal() << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1;
-
-   // R - measurement noise covariance matrix
-   Eigen::DiagonalMatrix<double, 3> r;
-   r.diagonal() << 0.05, 0.05, 0.05;
-
-   // P - error estimate covariance matrix
-   Eigen::DiagonalMatrix<double, 6> p;
-   p.setIdentity();
-
-   kf_matrices_ = KalmanFilterMatrices{ f, h, q, r, p };
- */
-
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
   int tracking_threshold = this->declare_parameter("tracker.tracking_threshold", 5);
@@ -140,13 +108,11 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
     this->create_publisher<visualization_msgs::msg::MarkerArray>("/processor/marker", 10);
 
   // Debug Publishers
-  debug_ = this->declare_parameter("debug", true);
-  // if (debug_) {
-  // }
+  debug_ = this->declare_parameter("debug_mode", true);
 
   debug_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
   debug_cb_handle_ = debug_param_sub_->add_parameter_callback(
-    "debug", [this](const rclcpp::Parameter & p) {
+    "debug_mode", [this](const rclcpp::Parameter & p) {
       debug_ = p.as_bool();
       // debug_ ? createDebugPublishers() : destroyDebugPublishers();
     });

@@ -46,7 +46,7 @@ OpenVINODetectNode::OpenVINODetectNode(rclcpp::NodeOptions options)
 
   // Debug mode handler
   RCLCPP_INFO(this->get_logger(), "Setup debug_mode handler");
-  debug_mode_ = this->declare_parameter("detector.debug_mode", false);
+  debug_mode_ = this->declare_parameter("debug_mode", false);
   if (debug_mode_) {
     this->create_debug_publishers();
   }
@@ -54,7 +54,7 @@ OpenVINODetectNode::OpenVINODetectNode(rclcpp::NodeOptions options)
   debug_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
   debug_cb_handle_ =
     debug_param_sub_->add_parameter_callback(
-    "detector.debug_mode", [this](const rclcpp::Parameter & p) {
+    "debug_mode", [this](const rclcpp::Parameter & p) {
       this->debug_mode_ = p.as_bool();
       this->debug_mode_ ? this->create_debug_publishers() : this->destroy_debug_publishers();
     });

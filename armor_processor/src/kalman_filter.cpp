@@ -25,7 +25,7 @@ KalmanFilter::KalmanFilter(const int dim_x, const int dim_z, const int dim_u)
   B = Eigen::MatrixXd::Zero(dim_x, dim_u);
 }
 
-Eigen::MatrixXd KalmanFilter::predict(const Eigen::VectorXd & u)
+Eigen::VectorXd KalmanFilter::predict(const Eigen::VectorXd & u)
 {
   x_prior = F * x_post + B * u;
   P = F * P * F.transpose() + Q;
@@ -33,7 +33,7 @@ Eigen::MatrixXd KalmanFilter::predict(const Eigen::VectorXd & u)
   return x_prior;
 }
 
-Eigen::MatrixXd KalmanFilter::update(const Eigen::VectorXd & z)
+Eigen::VectorXd KalmanFilter::update(const Eigen::VectorXd & z)
 {
   K = P * H.transpose() * (H * P * H.transpose() + R).inverse();
   x_post = x_prior + K * (z - H * x_prior);

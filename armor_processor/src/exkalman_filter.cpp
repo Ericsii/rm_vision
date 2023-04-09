@@ -28,7 +28,7 @@ ExKalmanFilter::ExKalmanFilter(
 {
 }
 
-Eigen::MatrixXd ExKalmanFilter::predict(const Eigen::VectorXd & u)
+Eigen::VectorXd ExKalmanFilter::predict(const Eigen::VectorXd & u)
 {
   dG = jaco_state_func(u, x_post);
   x_prior = state_func(u, x_post);
@@ -37,7 +37,7 @@ Eigen::MatrixXd ExKalmanFilter::predict(const Eigen::VectorXd & u)
   return x_prior;
 }
 
-Eigen::MatrixXd ExKalmanFilter::update(const Eigen::VectorXd & z)
+Eigen::VectorXd ExKalmanFilter::update(const Eigen::VectorXd & z)
 {
   dH = jaco_measure_func(z);
   K = P * dH.transpose() * (dH * P * dH.transpose() + R).inverse();

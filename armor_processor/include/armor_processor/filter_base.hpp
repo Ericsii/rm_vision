@@ -56,15 +56,15 @@ public:
    * @brief Predict next state
    *
    * @param u Control input
-   * @return Eigen::MatrixXd
+   * @return Eigen::VectorXd
    */
-  virtual Eigen::MatrixXd predict(const Eigen::VectorXd & u) = 0;
+  virtual Eigen::VectorXd predict(const Eigen::VectorXd & u) = 0;
   /**
    * @brief Predict next state u = 0
    *
-   * @return Eigen::MatrixXd
+   * @return Eigen::VectorXd
    */
-  virtual Eigen::MatrixXd predict()
+  virtual Eigen::VectorXd predict()
   {
     return predict(Eigen::VectorXd::Zero(dim_u));
   }
@@ -73,9 +73,9 @@ public:
    * @brief Update the estimated state based on measurement
    *
    * @param z Measurement state
-   * @return Eigen::MatrixXd
+   * @return Eigen::VectorXd
    */
-  virtual Eigen::MatrixXd update(const Eigen::VectorXd & z) = 0;
+  virtual Eigen::VectorXd update(const Eigen::VectorXd & z) = 0;
 
 public:
   // System dimensions

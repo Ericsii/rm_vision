@@ -25,12 +25,14 @@ namespace rm_auto_aim
 class ExKalmanFilter : public Filter
 {
 public:
-  using StateTransFunction = std::function<Eigen::MatrixXd(
+  using StateTransFunction = std::function<Eigen::VectorXd(
         const Eigen::VectorXd &,
         const Eigen::VectorXd &)>;
-  using JacobianStateTransFunction = StateTransFunction;
-  using MeasureFunction = std::function<Eigen::MatrixXd(const Eigen::VectorXd &)>;
-  using JacobianMeasureFunction = MeasureFunction;
+  using JacobianStateTransFunction = std::function<Eigen::MatrixXd(
+        const Eigen::VectorXd &,
+        const Eigen::VectorXd &)>;
+  using MeasureFunction = std::function<Eigen::VectorXd(const Eigen::VectorXd &)>;
+  using JacobianMeasureFunction = std::function<Eigen::MatrixXd(const Eigen::VectorXd &)>;
 
 public:
   /**
@@ -49,9 +51,9 @@ public:
     JacobianStateTransFunction jaco_state_func, JacobianMeasureFunction jaco_measure_func,
     const int dim_x, const int dim_z, const int dim_u = 0);
 
-  Eigen::MatrixXd predict(const Eigen::VectorXd & u) override;
+  Eigen::VectorXd predict(const Eigen::VectorXd & u) override;
 
-  Eigen::MatrixXd update(const Eigen::VectorXd & z) override;
+  Eigen::VectorXd update(const Eigen::VectorXd & z) override;
 
 public:
   StateTransFunction state_func;
