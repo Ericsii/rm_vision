@@ -39,7 +39,7 @@ Eigen::VectorXd ExKalmanFilter::predict(const Eigen::VectorXd & u)
 
 Eigen::VectorXd ExKalmanFilter::update(const Eigen::VectorXd & z)
 {
-  dH = jaco_measure_func(z);
+  dH = jaco_measure_func(x_prior);
   K = P * dH.transpose() * (dH * P * dH.transpose() + R).inverse();
   x_post = x_prior + K * (z - measure_func(x_prior));
   P = (I - K * dH) * P;

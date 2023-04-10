@@ -7,3 +7,7 @@ repositories:
     type: git
     url: https://github.com/robomaster-oss/rmoss_core.git
     version: humble
+  rm_hardware_driver:
+    type: git
+    url: https://e.coding.net/itlkineticpanda/23chaoduiitlkineticpanda/rm_hardware_driver.git
+    version: develop

@@ -36,10 +36,9 @@ EKFTracker::EKFTracker(
       F(2, 5) = this->dt_;
       return F;
     };
-  measure_jacobian_func_ = [](const Eigen::VectorXd & z) {
-      (void)z;
-      Eigen::MatrixXd H = Eigen::MatrixXd::Identity(3, 6);
-      return H;
+  measure_jacobian_func_ = [](const Eigen::VectorXd & x) {
+      (void)x;
+      return Eigen::MatrixXd::Identity(3, 6);
     };
 }
 
