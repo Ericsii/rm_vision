@@ -37,6 +37,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "projectile_motion::ProjectileMotionNode"
+  EXECUTABLE projectile_motion_node
+)
+
 # ---------------- Install --------------- #
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION lib

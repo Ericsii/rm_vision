@@ -1,0 +1,15 @@
+/**:
+  ros__parameters:
+    projectile:
+      offset_x: 0.0
+      offset_y: 0.0
+      offset_z: 0.0
+      offset_pitch: 0.0
+      offset_yaw: 0.0
+      offset_time: 0.0
+      initial_speed: 0.0
+      target_topic: 'processor/target'
+      gimbal_cmd_topic: 'gimbal_cmd'
+      shoot_data_topic: 'robot_shoot_data'
+      solver_type: 'gravity' # projectile solve method: gravity / gaf
+      # friction: 0.001 # Air resistance factor if use GAF solver

@@ -37,6 +37,7 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
   shoot_data_topic_ = this->declare_parameter("projectile.shoot_data_topic", "robot_shoot_data");
   solver_type_ = this->declare_parameter("projectile.solver_type", "gravity");
 
+  RCLCPP_INFO(this->get_logger(), "Projectile motion solver type: %s", solver_type_.c_str());
   if (solver_type_ == "gravity") {
     solver_ = std::make_shared<rmoss_projectile_motion::GravityProjectileSolver>(shoot_speed_);
   } else if (solver_type_ == "gaf") {
@@ -58,6 +59,8 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
     target_topic_, 10, std::bind(
       &ProjectileMotionNode::target_callback, this,
       std::placeholders::_1));
+
+  RCLCPP_INFO(this->get_logger(), "Projectile motion node initialized.");
 }
 
 void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg)
@@ -109,3 +112,10 @@ void ProjectileMotionNode::shoot_data_callback(
 }
 
 }  // namespace projectile_motion
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(projectile_motion::ProjectileMotionNode)
