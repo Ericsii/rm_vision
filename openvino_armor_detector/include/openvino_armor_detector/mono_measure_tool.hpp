@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ARMOR_DETECTOR__MONO_MEASURE_TOOL_HPP_
-#define ARMOR_DETECTOR__MONO_MEASURE_TOOL_HPP_
+#ifndef OPENVINO_ARMOR_DETECTOR__MONO_MEASURE_TOOL_HPP_
+#define OPENVINO_ARMOR_DETECTOR__MONO_MEASURE_TOOL_HPP_
 
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-#include <armor_detector/types.hpp>
+#include <openvino_armor_detector/types.hpp>
 
 namespace rm_auto_aim
 {
@@ -95,4 +95,4 @@ private:
 
 }  // namespace rm_auto_aim
 
-#endif  // ARMOR_DETECTOR__MONO_MEASURE_TOOL_HPP_
+#endif  // OPENVINO_ARMOR_DETECTOR__MONO_MEASURE_TOOL_HPP_

@@ -8,7 +8,7 @@
       debug_mode: true
 
       # Model 
-      model_path: 'package://armor_detector/model/opt-1208-001.onnx'
+      model_path: 'package://openvino_armor_detector/model/opt-1208-001.onnx'
       device_type: 'AUTO'
       confidence_threshold: 0.25
       top_k: 128

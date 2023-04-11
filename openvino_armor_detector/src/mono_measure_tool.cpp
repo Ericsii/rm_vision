@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <armor_detector/mono_measure_tool.hpp>
+#include <openvino_armor_detector/mono_measure_tool.hpp>
 
 namespace rm_auto_aim
 {

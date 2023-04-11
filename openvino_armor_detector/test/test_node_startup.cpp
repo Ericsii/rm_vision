@@ -21,7 +21,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
-#include "armor_detector/openvino_detect_node.hpp"
+#include "openvino_armor_detector/openvino_detect_node.hpp"
 
 using namespace std::chrono_literals;
 
@@ -32,7 +32,7 @@ TEST(ArmorDetecterNode, NodeStartupTest)
   auto node_options = rclcpp::NodeOptions();
   node_options.append_parameter_override(
     "detector.model_path",
-    "package://armor_detector/model/opt-1208-001.onnx");
+    "package://openvino_armor_detector/model/opt-1208-001.onnx");
   auto node = std::make_shared<rm_auto_aim::OpenVINODetectNode>(node_options);
 
   auto spin_thread = std::thread([&]() {rclcpp::spin(node);});

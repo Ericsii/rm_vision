@@ -26,9 +26,9 @@ from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
-    package_path = get_package_share_directory('armor_detector')
+    package_path = get_package_share_directory('openvino_armor_detector')
     default_config_file_path = os.path.join(
-        package_path, 'config', 'armor_detector.yaml')
+        package_path, 'config', 'openvino_armor_detector.yaml')
 
     # Declare the launch config
     namespace = LaunchConfiguration('namespace')
@@ -39,15 +39,30 @@ def generate_launch_description():
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
-        'namespace', default_value='', description='Namespace')
+        'namespace',
+        default_value='',
+        description='Namespace'
+    )
     declare_container_name_cmd = DeclareLaunchArgument(
-        'container_name', default_value='armor_detector', description='Container name')
+        'container_name',
+        default_value='openvino_armor_detector_container',
+        description='Container name'
+    )
     declare_config_file_cmd = DeclareLaunchArgument(
-        'config_file', default_value=default_config_file_path, description='Config file path')
+        'config_file',
+        default_value=default_config_file_path,
+        description='Config file path'
+    )
     declare_use_eternal_container_cmd = DeclareLaunchArgument(
-        'use_eternal_container', default_value='false', description='Use eternal container')
+        'use_eternal_container',
+        default_value='false',
+        description='Use eternal container'
+    )
     declare_use_sim_time_cmd = DeclareLaunchArgument(
-        'use_sim_time', default_value='false', description='Use sim time')
+        'use_sim_time',
+        default_value='false',
+        description='Use sim time'
+    )
 
     # Create container node
     container_node = Node(
@@ -63,9 +78,9 @@ def generate_launch_description():
         target_container=container_name,
         composable_node_descriptions=[
             ComposableNode(
-                package='armor_detector',
+                package='openvino_armor_detector',
                 plugin='rm_auto_aim::OpenVINODetectNode',
-                name='armor_detector',
+                name='openvino_armor_detector',
                 parameters=[config_file,
                             {'use_sim_time': use_sim_time}],
                 namespace=namespace

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "armor_detector/openvino_detect_node.hpp"
+#include "openvino_armor_detector/openvino_detect_node.hpp"
 
 #include <fmt/format.h>
 #include <rmw/qos_profiles.h>

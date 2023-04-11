@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ARMOR_DETECTOR__OPENVINO_DETECT_NODE_HPP_
-#define ARMOR_DETECTOR__OPENVINO_DETECT_NODE_HPP_
+#ifndef OPENVINO_ARMOR_DETECTOR__OPENVINO_DETECT_NODE_HPP_
+#define OPENVINO_ARMOR_DETECTOR__OPENVINO_DETECT_NODE_HPP_
 
 #include <queue>
 #include <future>
@@ -29,9 +29,9 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include <auto_aim_interfaces/msg/armors.hpp>
-#include <armor_detector/types.hpp>
-#include <armor_detector/openvino_detector.hpp>
-#include <armor_detector/mono_measure_tool.hpp>
+#include <openvino_armor_detector/types.hpp>
+#include <openvino_armor_detector/openvino_detector.hpp>
+#include <openvino_armor_detector/mono_measure_tool.hpp>
 
 namespace rm_auto_aim
 {
@@ -87,4 +87,4 @@ private:
 
 }  // namespace rm_auto_aim
 
-#endif  // ARMOR_DETECTOR__OPENVINO_DETECT_NODE_HPP_
+#endif  // OPENVINO_ARMOR_DETECTOR__OPENVINO_DETECT_NODE_HPP_

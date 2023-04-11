@@ -20,13 +20,13 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <opencv2/core/mat.hpp>
 
-#include <armor_detector/openvino_detector.hpp>
+#include <openvino_armor_detector/openvino_detector.hpp>
 
 using hrc = std::chrono::high_resolution_clock;
 
 TEST(OpenVINODetector, benchmark)
 {
-  auto pkg_path = ament_index_cpp::get_package_share_directory("armor_detector");
+  auto pkg_path = ament_index_cpp::get_package_share_directory("openvino_armor_detector");
   auto model_path = pkg_path + "/model/opt-1208-001.onnx";
 
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(armor_detector)
+project(openvino_armor_detector)
 
 # Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
