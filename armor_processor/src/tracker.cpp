@@ -1,38 +1,48 @@
-// Copyright 2023 Tingxu Chen
+// Copyright 2023 Chen Jun
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 
 #include "armor_processor/tracker.hpp"
 
+#include <angles/angles.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/convert.h>
+
+// STD
 #include <cfloat>
-#include <iostream>
 #include <memory>
+#include <string>
+
+#include <rclcpp/logger.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 namespace rm_auto_aim
 {
-Tracker::Tracker(
-  const Eigen::MatrixXd & Q, const Eigen::MatrixXd & R, double dt, double max_match_distance,
-  int tracking_threshold,
-  int lost_threshold)
-: tracker_state(LOST)
-  , tracking_id(0)
-  , Q_(Q)
-  , R_(R)
-  , dt_(dt)
-  , tracking_velocity_(Eigen::Vector3d::Zero())
-  , max_match_distance_(max_match_distance)
-  , tracking_threshold_(tracking_threshold)
-  , lost_threshold_(lost_threshold)
+Tracker::Tracker(double max_match_distance, int tracking_threshold, int lost_threshold)
+: tracker_state(LOST),
+  tracked_id(std::string("")),
+  target_state(Eigen::VectorXd::Zero(9)),
+  max_match_distance_(max_match_distance),
+  tracking_threshold_(tracking_threshold),
+  lost_threshold_(lost_threshold)
 {
 }
 
@@ -42,101 +52,77 @@ void Tracker::init(const Armors::SharedPtr & armors_msg)
     return;
   }
 
-  // TODO(chenjun): need more judgement
   // Simply choose the armor that is closest to image center
   double min_distance = DBL_MAX;
-  auto chosen_armor = armors_msg->armors[0];
+  tracked_armor = armors_msg->armors[0];
   for (const auto & armor : armors_msg->armors) {
     if (armor.distance_to_image_center < min_distance) {
       min_distance = armor.distance_to_image_center;
-      chosen_armor = armor;
+      tracked_armor = armor;
     }
   }
 
-  // KF init
-  Eigen::Matrix<double, 6, 6> f;
-  f << 1, 0, 0, dt_, 0, 0,
-    0, 1, 0, 0, dt_, 0,
-    0, 0, 1, 0, 0, dt_,
-    0, 0, 0, 1, 0, 0,
-    0, 0, 0, 0, 1, 0,
-    0, 0, 0, 0, 0, 1;
-  Eigen::Matrix<double, 3, 6> h;
-  h << 1, 0, 0, 0, 0, 0,
-    0, 1, 0, 0, 0, 0,
-    0, 0, 1, 0, 0, 0;
-  auto kf = std::make_shared<KalmanFilter>(6, 3);
-  kf->Q = Q_;
-  kf->R = R_;
-  kf->F = f;
-  kf->H = h;
-  kf_ = kf;
-  // kf_ = std::make_unique<KalmanFilter>(6, 3);
-  // kf_->Q = Q_;
-  // kf_->R = R_;
-  Eigen::VectorXd init_state(6);
-  const auto position = chosen_armor.position;
-  init_state << position.x, position.y, position.z, 0, 0, 0;
-  kf_->init(init_state);
+  initEKF(tracked_armor);
 
-  tracking_id = chosen_armor.number;
+  tracked_id = tracked_armor.number;
   tracker_state = DETECTING;
 }
 
-void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
+void Tracker::update(const Armors::SharedPtr & armors_msg)
 {
   // KF predict
-  // kf_matrices_.F(0, 3) = kf_matrices_.F(1, 4) = kf_matrices_.F(2, 5) = dt;
-  Eigen::VectorXd kf_prediction = kf_->predict();
+  Eigen::VectorXd ekf_prediction = ekf.predict();
+  RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "EKF predict");
 
   bool matched = false;
   // Use KF prediction as default target state if no matched armor is found
-  target_state = kf_prediction;
+  target_state = ekf_prediction;
 
   if (!armors_msg->armors.empty()) {
-    Armor matched_armor;
     double min_position_diff = DBL_MAX;
+    auto predicted_position = getArmorPositionFromState(ekf_prediction);
     for (const auto & armor : armors_msg->armors) {
-      Eigen::Vector3d position_vec(armor.position.x, armor.position.y, armor.position.z);
-      Eigen::Vector3d predicted_position = kf_prediction.head(3);
+      auto p = armor.pose.position;
+      Eigen::Vector3d position_vec(p.x, p.y, p.z);
       // Difference of the current armor position and tracked armor's predicted position
       double position_diff = (predicted_position - position_vec).norm();
       if (position_diff < min_position_diff) {
         min_position_diff = position_diff;
-        matched_armor = armor;
+        tracked_armor = armor;
       }
     }
 
     if (min_position_diff < max_match_distance_) {
       // Matching armor found
       matched = true;
-      Eigen::Vector3d position_vec(matched_armor.position.x, matched_armor.position.y,
-        matched_armor.position.z);
-      target_state = kf_->update(position_vec);
+      auto p = tracked_armor.pose.position;
+      // Update EKF
+      double measured_yaw = orientationToYaw(tracked_armor.pose.orientation);
+      Eigen::Vector4d z(p.x, p.y, p.z, measured_yaw);
+      target_state = ekf.update(z);
+      RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "EKF update");
     } else {
       // Check if there is same id armor in current frame
       for (const auto & armor : armors_msg->armors) {
-        if (armor.number == tracking_id) {
+        if (armor.number == tracked_id) {
+          // Armor jump happens
           matched = true;
-          // Reset KF
-          kf_ = std::make_unique<KalmanFilter>(6, 3);
-          Eigen::VectorXd init_state(6);
-          // Set init state with current armor position and tracking velocity before
-          init_state << armor.position.x, armor.position.y, armor.position.z, tracking_velocity_;
-          kf_->init(init_state);
-          target_state = init_state;
+          tracked_armor = armor;
+          handleArmorJump(tracked_armor);
           break;
         }
       }
     }
   }
 
-  // Save tracking target velocity
-  tracking_velocity_ = target_state.tail(3);
+  // Suppress R from converging to zero
+  if (target_state(8) < 0.2) {
+    target_state(8) = 0.2;
+    ekf.setState(target_state);
+  }
 
   // Tracking state machine
   if (tracker_state == DETECTING) {
-    // DETECTING
     if (matched) {
       detect_count_++;
       if (detect_count_ > tracking_threshold_) {
@@ -148,13 +134,11 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
       tracker_state = LOST;
     }
   } else if (tracker_state == TRACKING) {
-    // TRACKING
     if (!matched) {
       tracker_state = TEMP_LOST;
       lost_count_++;
     }
   } else if (tracker_state == TEMP_LOST) {
-    // LOST
     if (!matched) {
       lost_count_++;
       if (lost_count_ > lost_threshold_) {
@@ -166,6 +150,79 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
       lost_count_ = 0;
     }
   }
+}
+
+void Tracker::initEKF(const Armor & a)
+{
+  double xa = a.pose.position.x;
+  double ya = a.pose.position.y;
+  double za = a.pose.position.z;
+  last_yaw_ = 0;
+  double yaw = orientationToYaw(a.pose.orientation);
+
+  // Set initial position at 0.2m behind the target
+  target_state = Eigen::VectorXd::Zero(9);
+  double r = 0.2;
+  double xc = xa + r * cos(yaw);
+  double yc = ya + r * sin(yaw);
+  double zc = za;
+  last_z = zc, last_r = r;
+  target_state << xc, yc, zc, yaw, 0, 0, 0, 0, r;
+
+  ekf.setState(target_state);
+  RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "Init EKF!");
+}
+
+void Tracker::handleArmorJump(const Armor & a)
+{
+  double last_yaw = target_state(3);
+  double yaw = orientationToYaw(a.pose.orientation);
+
+  if (abs(yaw - last_yaw) > 0.4) {
+    last_z = target_state(2);
+    target_state(2) = a.pose.position.z;
+    target_state(3) = yaw;
+    std::swap(target_state(8), last_r);
+    RCLCPP_WARN(rclcpp::get_logger("armor_processor"), "Armor jump!");
+  }
+
+  auto p = a.pose.position;
+  Eigen::Vector3d current_p(p.x, p.y, p.z);
+  Eigen::Vector3d infer_p = getArmorPositionFromState(target_state);
+
+  if ((current_p - infer_p).norm() > max_match_distance_) {
+    double r = target_state(8);
+    target_state(0) = p.x + r * cos(yaw);
+    target_state(1) = p.y + r * sin(yaw);
+    target_state(4) = 0;
+    target_state(5) = 0;
+    RCLCPP_ERROR(rclcpp::get_logger("armor_processor"), "State wrong!");
+  }
+
+  ekf.setState(target_state);
+}
+
+double Tracker::orientationToYaw(const geometry_msgs::msg::Quaternion & q)
+{
+  // Get armor yaw
+  tf2::Quaternion tf_q;
+  tf2::fromMsg(q, tf_q);
+  double roll, pitch, yaw;
+  tf2::Matrix3x3(tf_q).getRPY(roll, pitch, yaw);
+  // Make yaw change continuous
+  yaw = last_yaw_ + angles::shortest_angular_distance(last_yaw_, yaw);
+  last_yaw_ = yaw;
+  return yaw;
+}
+
+Eigen::Vector3d Tracker::getArmorPositionFromState(const Eigen::VectorXd & x)
+{
+  // Calculate predicted position of the current armor
+  double xc = x(0), yc = x(1), zc = x(2);
+  double yaw = x(3), r = x(8);
+  double xa = xc - r * cos(yaw);
+  double ya = yc - r * sin(yaw);
+  return Eigen::Vector3d(xa, ya, zc);
 }
 
 }  // namespace rm_auto_aim

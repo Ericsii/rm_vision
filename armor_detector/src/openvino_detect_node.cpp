@@ -14,9 +14,11 @@
 
 #include "armor_detector/openvino_detect_node.hpp"
 
-#include <rmw/qos_profiles.h>
-#include <cv_bridge/cv_bridge.h>
 #include <fmt/format.h>
+#include <rmw/qos_profiles.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <cv_bridge/cv_bridge.h>
 
 #include <rmoss_util/url_resolver.hpp>
 
@@ -198,11 +200,24 @@ void OpenVINODetectNode::openvino_detect_callback(
       RCLCPP_WARN(this->get_logger(), "Calc target failed.");
     }
 
+    cv::Mat rot_mat;
+    cv::Rodrigues(target_rvec, rot_mat);
+    tf2::Matrix3x3 tf_rot_mat(
+      rot_mat.at<double>(0, 0), rot_mat.at<double>(0, 1), rot_mat.at<double>(0, 2),
+      rot_mat.at<double>(1, 0), rot_mat.at<double>(1, 1), rot_mat.at<double>(1, 2),
+      rot_mat.at<double>(2, 0), rot_mat.at<double>(2, 1), rot_mat.at<double>(2, 2));
+    tf2::Quaternion tf_quaternion;
+    tf_rot_mat.getRotation(tf_quaternion);
+
     armor.color = static_cast<int>(obj.number);
-    armor.number = static_cast<int>(obj.number);
-    armor.position.x = target_position.x;
-    armor.position.y = target_position.y;
-    armor.position.z = target_position.z;
+    armor.number = std::to_string(static_cast<int>(obj.number));
+    armor.pose.position.x = target_position.x;
+    armor.pose.position.y = target_position.y;
+    armor.pose.position.z = target_position.z;
+    armor.pose.orientation.x = tf_quaternion.x();
+    armor.pose.orientation.y = tf_quaternion.y();
+    armor.pose.orientation.z = tf_quaternion.z();
+    armor.pose.orientation.w = tf_quaternion.w();
     armor.distance_to_image_center = measure_tool_->calc_distance_to_center(obj);
 
     armors_msg.armors.push_back(std::move(armor));

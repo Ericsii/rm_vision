@@ -9,9 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## enforcing cleaner code.
 add_definitions(-Wall -Werror)
 
-## Export compile commands for clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 #######################
 ## Find dependencies ##
 #######################
@@ -32,26 +29,13 @@ rclcpp_components_register_node(${PROJECT_NAME}
   EXECUTABLE ${PROJECT_NAME}_node
 )
 
-rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN rm_auto_aim::MultiProcessorNode
-  EXECUTABLE multi_processor_node
-)
-
 #############
 ## Testing ##
 #############
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  list(APPEND AMENT_LINT_AUTO_EXCLUDE
-    ament_cmake_copyright
-  )
   ament_lint_auto_find_test_dependencies()
-
-  find_package(ament_cmake_gtest)
-  set(TEST_NAME test_kalman_filter)
-  ament_add_gtest(${TEST_NAME} test/${TEST_NAME}.cpp)
-  target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
 endif()
 
 #############

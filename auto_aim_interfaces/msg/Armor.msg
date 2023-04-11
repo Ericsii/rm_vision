@@ -4,7 +4,6 @@ uint8 NONE = 2
 uint8 PURPLE = 3
 
 uint8 color
-uint8 number
+string number
 float32 distance_to_image_center
-geometry_msgs/Point position
 geometry_msgs/Pose pose

@@ -1,16 +1,23 @@
-// Copyright 2023 Tingxu Chen
+// Copyright 2023 Chen Jun
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 
 #ifndef ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 #define ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
@@ -21,22 +28,16 @@
 #include <tf2_ros/message_filter.h>
 #include <tf2_ros/transform_listener.h>
 
-// STD
 #include <memory>
 #include <string>
 #include <vector>
 
-// ROS
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
-#include "armor_processor/kalman_filter.hpp"
-#include "armor_processor/spin_observer.hpp"
 #include "armor_processor/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
-#include "auto_aim_interfaces/msg/spin_info.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 
 namespace rm_auto_aim
@@ -52,20 +53,14 @@ private:
 
   void publishMarkers(const auto_aim_interfaces::msg::Target & target_msg);
 
-  // Last time received msg
+private:
+  // The time when the last message was received
   rclcpp::Time last_time_;
-
-  // Initial KF matrices
-  // KalmanFilterMatrices kf_matrices_;
   double dt_;
+  int target_color_;  // 0: blue 1: red
 
   // Armor tracker
   std::unique_ptr<Tracker> tracker_;
-
-  // Spin observer
-  bool allow_spin_observer_;
-  std::unique_ptr<SpinObserver> spin_observer_;
-  rclcpp::Publisher<auto_aim_interfaces::msg::SpinInfo>::SharedPtr spin_info_pub_;
 
   // Subscriber with tf2 message_filter
   std::string target_frame_;
@@ -79,13 +74,10 @@ private:
 
   // Visualization marker publisher
   visualization_msgs::msg::Marker position_marker_;
-  visualization_msgs::msg::Marker velocity_marker_;
+  visualization_msgs::msg::Marker linear_v_marker_;
+  visualization_msgs::msg::Marker angular_v_marker_;
+  visualization_msgs::msg::Marker armors_marker_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
-
-  // Debug information publishers
-  bool debug_;
-  std::shared_ptr<rclcpp::ParameterEventHandler> debug_param_sub_;
-  std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
 };
 
 }  // namespace rm_auto_aim

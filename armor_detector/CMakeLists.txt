@@ -26,6 +26,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(image_transport_plugins REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(auto_aim_interfaces REQUIRED)
 find_package(rmoss_interfaces REQUIRED)
 find_package(rmoss_util REQUIRED)
@@ -38,6 +39,7 @@ set(ros_dependencies
   cv_bridge
   image_transport
   image_transport_plugins
+  tf2
   auto_aim_interfaces
   rmoss_util
   rmoss_interfaces

@@ -1,16 +1,23 @@
-// Copyright 2023 Tingxu Chen
+// Copyright 2023 Chen Jun
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.clear
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 
 #ifndef ARMOR_PROCESSOR__TRACKER_HPP_
 #define ARMOR_PROCESSOR__TRACKER_HPP_
@@ -20,13 +27,14 @@
 
 // STD
 #include <memory>
+#include <string>
 
 // ROS
 #include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 
-#include "armor_processor/kalman_filter.hpp"
-#include "armor_processor/exkalman_filter.hpp"
+#include "armor_processor/extended_kalman_filter.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 
@@ -35,17 +43,14 @@ namespace rm_auto_aim
 class Tracker
 {
 public:
-  Tracker(
-    const Eigen::MatrixXd & Q, const Eigen::MatrixXd & R, double dt, double max_match_distance,
-    int tracking_threshold,
-    int lost_threshold);
+  Tracker(double max_match_distance, int tracking_threshold, int lost_threshold);
 
   using Armors = auto_aim_interfaces::msg::Armors;
   using Armor = auto_aim_interfaces::msg::Armor;
 
   void init(const Armors::SharedPtr & armors_msg);
 
-  void update(const Armors::SharedPtr & armors_msg, const double & dt);
+  void update(const Armors::SharedPtr & armors_msg);
 
   enum State
   {
@@ -55,16 +60,23 @@ public:
     TEMP_LOST,
   } tracker_state;
 
-  char tracking_id;
+  ExtendedKalmanFilter ekf;
+
+  Armor tracked_armor;
+  std::string tracked_id;
   Eigen::VectorXd target_state;
 
+  // To store another pair of armors message
+  double last_z, last_r;
+
 private:
-  Eigen::MatrixXd Q_, R_;
-  std::shared_ptr<Filter> kf_;
+  void initEKF(const Armor & a);
 
-  double dt_;
+  void handleArmorJump(const Armor & a);
 
-  Eigen::Vector3d tracking_velocity_;
+  double orientationToYaw(const geometry_msgs::msg::Quaternion & q);
+
+  Eigen::Vector3d getArmorPositionFromState(const Eigen::VectorXd & x);
 
   double max_match_distance_;
 
@@ -73,6 +85,8 @@ private:
 
   int detect_count_;
   int lost_count_;
+
+  double last_yaw_;
 };
 
 }  // namespace rm_auto_aim
