@@ -14,6 +14,8 @@
 
 #include <projectile_motion/projectile_motion_node.hpp>
 
+#include <geometry_msgs/msg/pose_stamped.hpp>
+
 #include <rmoss_projectile_motion/gravity_projectile_solver.hpp>
 #include <rmoss_projectile_motion/gaf_projectile_solver.hpp>
 
@@ -34,7 +36,6 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
   gimbal_cmd_topic_ = this->declare_parameter("projectile.gimbal_cmd_topic", "gimbal_cmd");
   shoot_data_topic_ = this->declare_parameter("projectile.shoot_data_topic", "robot_shoot_data");
   solver_type_ = this->declare_parameter("projectile.solver_type", "gravity");
-  target_frame_ = this->declare_parameter("projectile.target_frame", "shooter_link");
 
   if (solver_type_ == "gravity") {
     solver_ = std::make_shared<rmoss_projectile_motion::GravityProjectileSolver>(shoot_speed_);
@@ -53,22 +54,19 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
   shoot_data_subscriber_ = this->create_subscription<rm_interfaces::msg::RobotShootData>(
     shoot_data_topic_, 10,
     std::bind(&ProjectileMotionNode::shoot_data_callback, this, std::placeholders::_1));
-
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(
-    this->get_clock(), rclcpp::Duration::from_seconds(10.0).to_chrono<std::chrono::nanoseconds>());
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-  target_subscriber_.subscribe(this, target_topic_, rmw_qos_profile_sensor_data);
-  tf_filter_ = std::make_shared<tf2_filter>(
-    target_subscriber_, *tf_buffer_, target_frame_, 10,
-    this->get_node_logging_interface(), this->get_node_clock_interface(),
-    std::chrono::duration<int>(1));
-  tf_filter_->registerCallback(&ProjectileMotionNode::target_callback, this);
+  target_subscriber_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
+    target_topic_, 10, std::bind(
+      &ProjectileMotionNode::target_callback, this,
+      std::placeholders::_1));
 }
 
 void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg)
 {
-  auto target_position = Eigen::Vector3d(msg->position.x, msg->position.y, msg->position.z);
-  auto target_time = msg->header.stamp;
+  auto target_position =
+    Eigen::Vector3d(
+    msg->position.x + offset_x_, msg->position.y + offset_y_,
+    msg->position.z + offset_z_);
+  rclcpp::Time target_time = msg->header.stamp;
   auto target_velocity = Eigen::Vector3d(msg->velocity.x, msg->velocity.y, msg->velocity.z);
 
   // Use distance to calculate the time offset. (Approximate)
@@ -82,42 +80,12 @@ void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Targe
   solver_->solve(hit_distance, hit_height, pitch);
   yaw = std::atan2(hit_position.y(), hit_position.x());
 
-  // Transform the pitch and yaw to the shooter_link frame.
-  // Define the transform from the target frame to the shooter_link frame.
-  geometry_msgs::msg::TransformStamped transform_stamped;
-  try {
-    transform_stamped =
-      tf_buffer_->lookupTransform(target_frame_, msg->header.frame_id, target_time);
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to transform target pose: %s", ex.what());
-    return;
-  }
-
-  // Create a quaternion from the pitch and yaw angles.
-  Eigen::Quaterniond q = Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
-    Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-
-  // Transform the quaternion to the shooter_link frame.
-  Eigen::Quaterniond q_shooter_link =
-    Eigen::Quaterniond(
-    transform_stamped.transform.rotation.w, transform_stamped.transform.rotation.x,
-    transform_stamped.transform.rotation.y, transform_stamped.transform.rotation.z) *
-    q *
-    Eigen::Quaterniond(
-    transform_stamped.transform.rotation.w, -transform_stamped.transform.rotation.x,
-    -transform_stamped.transform.rotation.y, -transform_stamped.transform.rotation.z);
-
-  // Extract the pitch and yaw angles from the transformed quaternion.
-  Eigen::Vector3d euler_angles = q_shooter_link.toRotationMatrix().eulerAngles(2, 1, 0);
-  double pitch_shooter_link = euler_angles[1] + offset_pitch_;
-  double yaw_shooter_link = euler_angles[0] + offset_yaw_;
-
   // Publish the gimbal command.
   auto gimbal_cmd = rm_interfaces::msg::GimbalCmd();
   gimbal_cmd.pitch_type = rm_interfaces::msg::GimbalCmd::ABSOLUTE_ANGLE;
   gimbal_cmd.yaw_type = rm_interfaces::msg::GimbalCmd::ABSOLUTE_ANGLE;
-  gimbal_cmd.position.pitch = pitch_shooter_link;
-  gimbal_cmd.position.yaw = yaw_shooter_link;
+  gimbal_cmd.position.pitch = pitch + offset_pitch_;
+  gimbal_cmd.position.yaw = yaw + offset_yaw_;
   gimbal_cmd.velocity.pitch = 0.0;
   gimbal_cmd.velocity.yaw = 0.0;
   gimbal_cmd_publisher_->publish(gimbal_cmd);
@@ -128,13 +96,15 @@ void ProjectileMotionNode::shoot_data_callback(
 {
   shoot_speed_ = static_cast<double>(msg->bullet_speed);
   if (solver_type_ == "gravity") {
-    solver_ = std::make_shared<rmoss_projectile_motion::GravityProjectileSolver>(shoot_speed_);
+    auto solver_ptr = std::dynamic_pointer_cast<rmoss_projectile_motion::GravityProjectileSolver>(
+      solver_);
+    solver_ptr->set_initial_vel(shoot_speed_);
   } else if (solver_type_ == "gaf") {
-    solver_ =
-      std::make_shared<rmoss_projectile_motion::GafProjectileSolver>(shoot_speed_, friction_);
+    auto solver_ptr = std::dynamic_pointer_cast<rmoss_projectile_motion::GafProjectileSolver>(
+      solver_);
+    solver_ptr->set_initial_vel(shoot_speed_);
   } else {
     RCLCPP_ERROR(this->get_logger(), "Unknown solver type: %s", solver_type_.c_str());
-    return;
   }
 }
 

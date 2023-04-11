@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PROJECTILE_MOTION__PROJECTILE_MOTION_NODE_PROJECTILE_MOTION_NODE_
+#ifndef PROJECTILE_MOTION__PROJECTILE_MOTION_NODE_HPP_
 #define PROJECTILE_MOTION__PROJECTILE_MOTION_NODE_HPP_
 
 #include <message_filters/subscriber.h>
@@ -41,7 +41,7 @@ public:
   using tf2_filter = tf2_ros::MessageFilter<auto_aim_interfaces::msg::Target>;
 
 public:
-  ProjectileMotionNode(rclcpp::NodeOptions options);
+  explicit ProjectileMotionNode(rclcpp::NodeOptions options);
 
 private:
   void target_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg);
@@ -61,15 +61,10 @@ private:
   std::string gimbal_cmd_topic_;
   std::string shoot_data_topic_;
   std::string solver_type_;
-  std::string target_frame_;
-
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  std::shared_ptr<tf2_filter> tf_filter_;
-  message_filters::Subscriber<auto_aim_interfaces::msg::Target> target_subscriber_;
 
   std::shared_ptr<rmoss_projectile_motion::ProjectileSolverInterface> solver_;
   rclcpp::Subscription<rm_interfaces::msg::RobotShootData>::SharedPtr shoot_data_subscriber_;
+  rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr target_subscriber_;
   rclcpp::Publisher<rm_interfaces::msg::GimbalCmd>::SharedPtr gimbal_cmd_publisher_;
 };
 
