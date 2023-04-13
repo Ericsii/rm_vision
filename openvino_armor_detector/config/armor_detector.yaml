@@ -1,11 +1,11 @@
 /**:
   ros__parameters:
     use_sensor_data_qos: false
+    debug_mode: true
 
     detector:
       camera_name: 'camera'
       subscribe_compressed: false
-      debug_mode: true
 
       # Model 
       model_path: 'package://openvino_armor_detector/model/opt-1208-001.onnx'

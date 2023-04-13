@@ -28,13 +28,13 @@ from launch_ros.descriptions import ComposableNode
 def generate_launch_description():
     package_path = get_package_share_directory('openvino_armor_detector')
     default_config_file_path = os.path.join(
-        package_path, 'config', 'openvino_armor_detector.yaml')
+        package_path, 'config', 'armor_detector.yaml')
 
     # Declare the launch config
     namespace = LaunchConfiguration('namespace')
     config_file = LaunchConfiguration('config_file')
     container_name = LaunchConfiguration('container_name')
-    use_eternal_container = LaunchConfiguration('use_eternal_container')
+    use_external_container = LaunchConfiguration('use_external_container')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Declare the launch arguments
@@ -54,7 +54,7 @@ def generate_launch_description():
         description='Config file path'
     )
     declare_use_eternal_container_cmd = DeclareLaunchArgument(
-        'use_eternal_container',
+        'use_external_container',
         default_value='false',
         description='Use eternal container'
     )
@@ -70,7 +70,7 @@ def generate_launch_description():
         package='rclcpp_components',
         executable='component_container_isolated',
         output='screen',
-        condition=UnlessCondition(use_eternal_container),
+        condition=UnlessCondition(use_external_container),
     )
 
     # Create armor detector node

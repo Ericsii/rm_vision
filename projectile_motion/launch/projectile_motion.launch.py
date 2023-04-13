@@ -34,7 +34,7 @@ def generate_launch_description():
     namespace = LaunchConfiguration('namespace')
     config_file = LaunchConfiguration('config_file')
     container_name = LaunchConfiguration('container_name')
-    use_eternal_container = LaunchConfiguration('use_eternal_container')
+    use_eternal_container = LaunchConfiguration('use_external_container')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Declare the launch arguments
@@ -54,7 +54,7 @@ def generate_launch_description():
         description='Config file path'
     )
     declare_use_eternal_container_cmd = DeclareLaunchArgument(
-        'use_eternal_container',
+        'use_external_container',
         default_value='false',
         description='Use eternal container'
     )
