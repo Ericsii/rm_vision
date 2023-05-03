@@ -105,6 +105,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_targets(export_${PROJECT_NAME})
-ament_export_dependencies(${ros_dependencies} ${other_dependencies})
+ament_export_dependencies(${ros_dependencies})
 
 ament_package()

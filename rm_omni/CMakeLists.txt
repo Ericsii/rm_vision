@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.11)
 project(rm_omni)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -19,6 +19,7 @@ find_package(tf2 REQUIRED)
 find_package(auto_aim_interfaces REQUIRED)
 find_package(rmoss_interfaces REQUIRED)
 find_package(rmoss_util REQUIRED)
+find_package(openvino_armor_detector REQUIRED)
 
 set(ros_dependencies
   rclcpp
@@ -32,6 +33,7 @@ set(ros_dependencies
   auto_aim_interfaces
   rmoss_util
   rmoss_interfaces
+  openvino_armor_detector
 )
 
 # third party packages
@@ -49,10 +51,48 @@ set(other_dependencies
 )
 
 # ------------- Build library ------------- #
+add_library(${PROJECT_NAME} SHARED
+  src/omni_node.cpp
+)
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(${PROJECT_NAME}
+  ${other_dependencies}
+)
+ament_target_dependencies(${PROJECT_NAME} ${ros_dependencies})
 
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "rm_omni::OmniNode"
+  EXECUTABLE omni_node
+)
+
+# ---------------- Install --------------- #
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+# Install  directories
+install(DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(TARGETS ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
+
+# ----------------- Test ----------------- #
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+ament_export_targets(export_${PROJECT_NAME})
+ament_export_dependencies(${ros_dependencies} ${other_dependencies})
 
 ament_package()
