@@ -11,5 +11,6 @@
       target_topic: 'processor/target'
       gimbal_cmd_topic: 'gimbal_cmd'
       shoot_data_topic: 'robot_shoot_data'
+      target_frame: 'shooter_link' # gimbal frame_id
       solver_type: 'gravity' # projectile solve method: gravity / gaf
       # friction: 0.001 # Air resistance factor if use GAF solver
