@@ -1,3 +1,17 @@
+// Copyright 2023 Yunlong Feng
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef RM_OMNI__OMNI_NODE_HPP_
 #define RM_OMNI__OMNI_NODE_HPP_
 
@@ -15,6 +29,7 @@
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
+#include <rmoss_util/url_resolver.hpp>
 #include <auto_aim_interfaces/msg/armors.hpp>
 #include <openvino_armor_detector/types.hpp>
 #include <openvino_armor_detector/openvino_detector.hpp>
@@ -31,8 +46,9 @@ public:
 private:
   void init_detector();
 
-  void img_callback(const sensor_msgs::msg::Image::ConstSharedPtr& img,
-                    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& cam_info);
+  void img_callback(
+    const sensor_msgs::msg::Image::ConstSharedPtr & img,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & cam_info);
 
   void openvino_detect_callback(
     const std::vector<rm_auto_aim::ArmorObject> & objs, int64_t timestamp_nanosec,
@@ -53,6 +69,10 @@ private:
   std::mutex detector_mutex_;
   std::unique_ptr<rm_auto_aim::OpenVINODetector> detector_;
   std::queue<std::future<bool>> detect_requests_;
+
+  // Camera measure
+  std::unique_ptr<rm_auto_aim::MonoMeasureTool> measure_tool_;
+  sensor_msgs::msg::CameraInfo::SharedPtr cam_info_;
 
   // Visualization marker publisher
   visualization_msgs::msg::Marker position_marker_;
