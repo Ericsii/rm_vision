@@ -1,0 +1,19 @@
+/**:
+  ros__parameters:
+    use_sensor_data_qos: false
+    debug_mode: true
+    camera_num: 4
+
+    omni:
+      camera0_name: 'camera0'
+      camera1_name: 'camera1'
+      camera2_name: 'camera2'
+      camera3_name: 'camera3'
+      subscribe_compressed: false
+
+      # Model 
+      model_path: 'package://openvino_armor_detector/model/opt-1208-001.onnx'
+      device_type: 'AUTO'
+      confidence_threshold: 0.25
+      top_k: 128
+      nms_threshold: 0.3
