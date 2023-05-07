@@ -92,11 +92,10 @@ OmniNode::OmniNode(rclcpp::NodeOptions options)
   marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("omni/marker", 10);
 
   for (int i = 0; i < camera_num_; ++i) {
-    // Camera handler
     img_subs_.push_back(
       std::make_shared<image_transport::CameraSubscriber>(
         image_transport::create_camera_subscription(
-          this, camera_names_[i] + "/image_raw",
+          this, "/" + camera_names_[i] + "/image_raw",
           std::bind(&OmniNode::img_callback, this, std::placeholders::_1, std::placeholders::_2),
           transport_type_,
           use_sensor_data_qos ? rmw_qos_profile_sensor_data : rmw_qos_profile_default)));
@@ -276,7 +275,6 @@ void OmniNode::openvino_detect_callback(
     cv::putText(
       debug_img, letency, cv::Point2i(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8,
       cv::Scalar(0, 255, 255), 2);
-
     debug_img_pub_.publish(cv_bridge::CvImage(armors_msg.header, "rgb8", debug_img).toImageMsg());
   }
 }
