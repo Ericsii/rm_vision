@@ -2,13 +2,10 @@
   ros__parameters:
     use_sensor_data_qos: false
     debug_mode: true
-    camera_num: 4
+    camera_num: 1
 
     omni:
-      camera0_name: 'camera0'
-      camera1_name: 'camera1'
-      camera2_name: 'camera2'
-      camera3_name: 'camera3'
+      camera0_name: 'front_camera'
       subscribe_compressed: false
 
       # Model 

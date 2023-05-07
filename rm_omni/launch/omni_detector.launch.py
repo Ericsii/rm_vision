@@ -26,7 +26,7 @@ from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
-    package_path = get_package_share_directory('omni_detector')
+    package_path = get_package_share_directory('rm_omni')
     default_config_file_path = os.path.join(
         package_path, 'config', 'omni_detector.yaml')
 
@@ -79,7 +79,7 @@ def generate_launch_description():
         composable_node_descriptions=[
             ComposableNode(
                 package='rm_omni',
-                plugin='rm_auto_aim::OpenVINODetectNode',
+                plugin='rm_omni::OmniNode',
                 name='omni_detector',
                 parameters=[config_file,
                             {'use_sim_time': use_sim_time}],
