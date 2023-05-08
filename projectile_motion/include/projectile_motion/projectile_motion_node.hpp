@@ -61,11 +61,17 @@ private:
   std::string gimbal_cmd_topic_;
   std::string shoot_data_topic_;
   std::string solver_type_;
+  std::string shooter_frame_;
 
   std::shared_ptr<rmoss_projectile_motion::ProjectileSolverInterface> solver_;
   rclcpp::Subscription<rm_interfaces::msg::RobotShootData>::SharedPtr shoot_data_subscriber_;
   rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr target_subscriber_;
   rclcpp::Publisher<rm_interfaces::msg::GimbalCmd>::SharedPtr gimbal_cmd_publisher_;
+
+  message_filters::Subscriber<auto_aim_interfaces::msg::Target> target_sub_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<tf2_filter> tf_filter_;
 };
 
 }  // namespace projectile_motion

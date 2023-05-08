@@ -55,40 +55,83 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
   shoot_data_subscriber_ = this->create_subscription<rm_interfaces::msg::RobotShootData>(
     shoot_data_topic_, 10,
     std::bind(&ProjectileMotionNode::shoot_data_callback, this, std::placeholders::_1));
-  target_subscriber_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
-    target_topic_, 10, std::bind(
-      &ProjectileMotionNode::target_callback, this,
-      std::placeholders::_1));
+
+  shooter_frame_ = this->declare_parameter("projectile.target_frame", "shooter_link");
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock(), tf2::durationFromSec(10.0));
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  target_sub_.subscribe(this, target_topic_);
+  tf_filter_ =
+    std::make_shared<tf2_filter>(
+    target_sub_, *tf_buffer_, shooter_frame_, 10, this->get_node_logging_interface(),
+    this->get_node_clock_interface(), std::chrono::duration<int>(1));
+  tf_filter_->registerCallback(&ProjectileMotionNode::target_callback, this);
 
   RCLCPP_INFO(this->get_logger(), "Projectile motion node initialized.");
 }
 
 void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg)
 {
-  auto target_position =
+  // Get current gimbal angle.
+  double cur_roll, cur_pitch, cur_yaw;
+  try {
+    auto transfrom = tf_buffer_->lookupTransform(
+      msg->header.frame_id, shooter_frame_,
+      msg->header.stamp);
+    tf2::Quaternion rot_q(transfrom.transform.rotation.x, transfrom.transform.rotation.y,
+      transfrom.transform.rotation.z, transfrom.transform.rotation.w);
+    tf2::Matrix3x3 rot_m(rot_q);
+
+    rot_m.getRPY(cur_roll, cur_pitch, cur_yaw);
+  } catch (const tf2::ExtrapolationException & ex) {
+    RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
+    return;
+  }
+
+  // Calculate the targets position at current time.
+  rclcpp::Time target_time = msg->header.stamp;
+  auto center_position =
     Eigen::Vector3d(
     msg->position.x + offset_x_, msg->position.y + offset_y_,
     msg->position.z + offset_z_);
-  rclcpp::Time target_time = msg->header.stamp;
-  auto target_velocity = Eigen::Vector3d(msg->velocity.x, msg->velocity.y, msg->velocity.z);
+  auto center_velocity = Eigen::Vector3d(msg->velocity.x, msg->velocity.y, msg->velocity.z);
 
-  // Use distance to calculate the time offset. (Approximate)
-  auto distance = target_position.norm();
-  auto time_offset = distance / shoot_speed_ + offset_time_;
+  // Calculate each target position at current time & predict time.
+  double min_yaw = DBL_MAX;
+  double hit_yaw, hit_pitch;
+  for (size_t i = 0; i < 4; ++i) {
+    double tmp_yaw = msg->yaw + i * M_PI_2;
+    double r = i % 2 == 0 ? msg->radius_1 : msg->radius_2;
+    auto target_position = center_position + Eigen::Vector3d(
+      r * std::cos(tmp_yaw), r * std::sin(tmp_yaw),
+      i % 2 == 0 ? msg->position.z : msg->z_2);
 
-  // Calculate the target position at hit time.
-  auto hit_position = target_position + target_velocity * time_offset;
-  auto hit_distance = hit_position.head(2).norm(), hit_height = hit_position.z();
-  double pitch, yaw;
-  solver_->solve(hit_distance, hit_height, pitch);
-  yaw = std::atan2(hit_position.y(), hit_position.x());
+    // Use distance to calculate the time offset. (Approximate)
+    auto fly_time = target_position.head(2).norm() / shoot_speed_ + offset_time_;
+    tmp_yaw = tmp_yaw + msg->v_yaw * fly_time;
+    auto target_predict_position =
+      center_position + center_velocity * fly_time +
+      Eigen::Vector3d(
+      r * std::cos(tmp_yaw), r * std::sin(
+        tmp_yaw), i % 2 == 0 ? msg->position.z : msg->z_2);
+
+    double target_pitch, target_yaw;
+    solver_->solve(
+      target_predict_position.head(2).norm(), target_predict_position.z(),
+      target_pitch);
+    target_yaw = std::atan2(target_predict_position.y(), target_predict_position.x());
+    if (std::abs(target_yaw - cur_yaw) < min_yaw) {
+      min_yaw = std::abs(target_yaw - cur_yaw);
+      hit_yaw = target_yaw;
+      hit_pitch = target_pitch;
+    }
+  }
 
   // Publish the gimbal command.
   auto gimbal_cmd = rm_interfaces::msg::GimbalCmd();
   gimbal_cmd.pitch_type = rm_interfaces::msg::GimbalCmd::ABSOLUTE_ANGLE;
   gimbal_cmd.yaw_type = rm_interfaces::msg::GimbalCmd::ABSOLUTE_ANGLE;
-  gimbal_cmd.position.pitch = pitch + offset_pitch_;
-  gimbal_cmd.position.yaw = yaw + offset_yaw_;
+  gimbal_cmd.position.pitch = hit_pitch + offset_pitch_;
+  gimbal_cmd.position.yaw = hit_yaw + offset_yaw_;
   gimbal_cmd.velocity.pitch = 0.0;
   gimbal_cmd.velocity.yaw = 0.0;
   gimbal_cmd_publisher_->publish(gimbal_cmd);
