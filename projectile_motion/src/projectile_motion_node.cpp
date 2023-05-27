@@ -59,7 +59,7 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
   shooter_frame_ = this->declare_parameter("projectile.target_frame", "shooter_link");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock(), tf2::durationFromSec(10.0));
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-  target_sub_.subscribe(this, target_topic_);
+  target_sub_.subscribe(this, target_topic_, rclcpp::SensorDataQoS().get_rmw_qos_profile());
   tf_filter_ =
     std::make_shared<tf2_filter>(
     target_sub_, *tf_buffer_, shooter_frame_, 10, this->get_node_logging_interface(),
