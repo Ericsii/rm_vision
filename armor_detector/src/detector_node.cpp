@@ -77,8 +77,9 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
       debug_ ? createDebugPublishers() : destroyDebugPublishers();
     });
 
+  camera_name_ = this->declare_parameter("camera_name", "camera");
   cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-    "/camera_info", rclcpp::SensorDataQoS(),
+    camera_name_ + "/camera_info", rclcpp::SensorDataQoS(),
     [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
       cam_center_ = cv::Point2f(camera_info->k[2], camera_info->k[5]);
       cam_info_ = std::make_shared<sensor_msgs::msg::CameraInfo>(*camera_info);
@@ -87,7 +88,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
     });
 
   img_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    "/image_raw", rclcpp::SensorDataQoS(),
+    camera_name_ + "/image_raw", rclcpp::SensorDataQoS(),
     std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1));
 }
 

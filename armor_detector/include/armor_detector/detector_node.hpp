@@ -57,6 +57,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
   // Camera info part
+  std::string camera_name_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
   cv::Point2f cam_center_;
   std::shared_ptr<sensor_msgs::msg::CameraInfo> cam_info_;

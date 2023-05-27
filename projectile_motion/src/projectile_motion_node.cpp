@@ -32,7 +32,7 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
   offset_yaw_ = this->declare_parameter("projectile.offset_yaw", 0.0);
   offset_time_ = this->declare_parameter("projectile.offset_time", 0.0);
   shoot_speed_ = this->declare_parameter("projectile.initial_speed", 18.0);
-  target_topic_ = this->declare_parameter("projectile.target_topic", "processor/target");
+  target_topic_ = this->declare_parameter("projectile.target_topic", "tracker/target");
   gimbal_cmd_topic_ = this->declare_parameter("projectile.gimbal_cmd_topic", "gimbal_cmd");
   shoot_data_topic_ = this->declare_parameter("projectile.shoot_data_topic", "robot_shoot_data");
   solver_type_ = this->declare_parameter("projectile.solver_type", "gravity");
