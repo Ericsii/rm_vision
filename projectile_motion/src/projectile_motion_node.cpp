@@ -98,26 +98,36 @@ void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Targe
   // Calculate each target position at current time & predict time.
   double min_yaw = DBL_MAX;
   double hit_yaw, hit_pitch;
-  for (size_t i = 0; i < 4; ++i) {
-    double tmp_yaw = msg->yaw + i * M_PI_2;
-    double r = i % 2 == 0 ? msg->radius_1 : msg->radius_2;
-    auto target_position = center_position + Eigen::Vector3d(
-      r * std::cos(tmp_yaw), r * std::sin(tmp_yaw),
-      i % 2 == 0 ? msg->position.z : msg->z_2);
+  bool is_current_pair = true;
+  double r = 0., target_dz = 0., fly_time = 0.;
+  double target_pitch, target_yaw;
+  Eigen::Vector3d target_position, target_predict_position;
+  for (int i = 0; i < msg->armors_num; ++i) {
+    double tmp_yaw = msg->yaw + i * (2 * M_PI / msg->armors_num);
+    if (msg->armors_num == 4) {
+      r = is_current_pair ? msg->radius_1 : msg->radius_2;
+      is_current_pair = !is_current_pair;
+      target_dz = is_current_pair ? 0. : msg->dz;
+    } else {
+      r = msg->radius_1;
+      target_dz = 0.;
+    }
+    target_position = center_position + Eigen::Vector3d(
+      -r * std::cos(tmp_yaw), -r * std::sin(tmp_yaw),
+      target_dz);
 
     // Use distance to calculate the time offset. (Approximate)
-    auto fly_time = target_position.head(2).norm() / shoot_speed_ + offset_time_;
+    fly_time = target_position.head(2).norm() / shoot_speed_ + offset_time_;
     tmp_yaw = tmp_yaw + msg->v_yaw * fly_time;
-    auto target_predict_position =
-      center_position + center_velocity * fly_time +
+    target_predict_position = center_position + center_velocity * fly_time +
       Eigen::Vector3d(
-      r * std::cos(tmp_yaw), r * std::sin(
-        tmp_yaw), i % 2 == 0 ? msg->position.z : msg->z_2);
+      -r * std::cos(tmp_yaw), -r * std::sin(tmp_yaw),
+      target_dz);
 
-    double target_pitch, target_yaw;
     solver_->solve(
       target_predict_position.head(2).norm(), target_predict_position.z(),
       target_pitch);
+    target_pitch = -target_pitch;  // Right-handed system
     target_yaw = std::atan2(target_predict_position.y(), target_predict_position.x());
     if (std::abs(target_yaw - cur_yaw) < min_yaw) {
       min_yaw = std::abs(target_yaw - cur_yaw);

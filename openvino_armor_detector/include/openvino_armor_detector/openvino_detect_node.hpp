@@ -61,6 +61,7 @@ private:
   std::string transport_type_;
   std::string frame_id_;
   // OpenVINO Detector
+  int detect_color_; // 0: red, 1: blue
   std::unique_ptr<OpenVINODetector> detector_;
   std::queue<std::future<bool>> detect_requests_;
   // Camera info

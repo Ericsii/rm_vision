@@ -1,7 +1,0 @@
-std_msgs/Header header
-bool target_spinning
-bool suggest_fire
-int64 jump_count
-float64 yaw_diff
-float64 jump_period
-float64 time_after_jumping

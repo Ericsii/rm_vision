@@ -36,6 +36,11 @@ OpenVINODetectNode::OpenVINODetectNode(rclcpp::NodeOptions options)
     RCLCPP_ERROR(this->get_logger(), "Failed to initialize OpenVINO");
     return;
   }
+  rcl_interfaces::msg::ParameterDescriptor param_desc;
+  param_desc.description = "0-RED, 1-BLUE";
+  param_desc.integer_range[0].from_value = 0;
+  param_desc.integer_range[0].to_value = 1;
+  detect_color_ = this->declare_parameter("detect_color", 0, param_desc);
 
   auto use_sensor_data_qos = this->declare_parameter("use_sensor_data_qos", false);
 
@@ -178,6 +183,8 @@ void OpenVINODetectNode::openvino_detect_callback(
     return;
   }
 
+  detect_color_ = this->get_parameter("target_color").as_int();
+
   auto timestamp = rclcpp::Time(timestamp_nanosec);
 
   // Used to draw debug info
@@ -191,6 +198,13 @@ void OpenVINODetectNode::openvino_detect_callback(
   armors_msg.header.stamp = timestamp;
 
   for (auto & obj : objs) {
+    if (detect_color_ == 0 && obj.color != ArmorColor::RED) {
+      continue;
+    }
+    else if (detect_color_ == 1 && obj.color != ArmorColor::BLUE) {
+      continue;
+    }
+
     auto_aim_interfaces::msg::Armor armor;
 
     cv::Point3f target_position;
@@ -209,8 +223,7 @@ void OpenVINODetectNode::openvino_detect_callback(
     tf2::Quaternion tf_quaternion;
     tf_rot_mat.getRotation(tf_quaternion);
 
-    armor.color = static_cast<int>(obj.number);
-    armor.number = std::to_string(static_cast<int>(obj.number));
+    armor.number = kArmorNames[static_cast<int>(obj.number)];
     armor.pose.position.x = target_position.x;
     armor.pose.position.y = target_position.y;
     armor.pose.position.z = target_position.z;
@@ -277,9 +290,9 @@ void OpenVINODetectNode::openvino_detect_callback(
 
     auto end = this->get_clock()->now();
     auto duration = end.seconds() - timestamp.seconds();
-    std::string letency = fmt::format("Latency: {:.3f}ms", duration * 1000);
+    std::string latency = fmt::format("Latency: {:.3f}ms", duration * 1000);
     cv::putText(
-      debug_img, letency, cv::Point2i(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8,
+      debug_img, latency, cv::Point2i(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8,
       cv::Scalar(0, 255, 255),
       2);
 
