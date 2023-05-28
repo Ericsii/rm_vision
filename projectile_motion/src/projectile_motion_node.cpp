@@ -76,6 +76,10 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
 
 void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg)
 {
+  if (!msg->tracking)
+  {
+    return;
+  }
   // Get current gimbal angle.
   double cur_roll, cur_pitch, cur_yaw;
   try {
@@ -101,7 +105,7 @@ void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Targe
   auto center_velocity = Eigen::Vector3d(msg->velocity.x, msg->velocity.y, msg->velocity.z);
 
   // Calculate each target position at current time & predict time.
-  double min_yaw = DBL_MAX;
+  double min_yaw = DBL_MAX, min_dis = DBL_MAX;
   double hit_yaw, hit_pitch;
   bool is_current_pair = true;
   double r = 0., target_dz = 0., fly_time = 0.;
@@ -134,8 +138,11 @@ void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Targe
       target_pitch);
     target_pitch = -target_pitch;  // Right-handed system
     target_yaw = std::atan2(target_predict_position.y(), target_predict_position.x());
-    if (std::abs(target_yaw - cur_yaw) < min_yaw) {
-      min_yaw = std::abs(target_yaw - cur_yaw);
+
+    // Choose the target with minimum yaw error.
+    if (::abs(::fmod(tmp_yaw, M_PI) - cur_yaw) < min_yaw && target_predict_position.head(2).norm() < min_dis) {
+      min_yaw = ::abs(::fmod(tmp_yaw, M_PI) - cur_yaw);
+      min_dis = target_predict_position.head(2).norm();
       hit_yaw = target_yaw;
       hit_pitch = target_pitch;
     }
