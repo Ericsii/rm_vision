@@ -58,6 +58,11 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
 
   shooter_frame_ = this->declare_parameter("projectile.target_frame", "shooter_link");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock(), tf2::durationFromSec(10.0));
+  // Create the timer interface before call to waitForTransform,
+  // to avoid a tf2_ros::CreateTimerInterfaceException exception
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    this->get_node_base_interface(), this->get_node_timers_interface());
+  tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   target_sub_.subscribe(this, target_topic_, rclcpp::SensorDataQoS().get_rmw_qos_profile());
   tf_filter_ =
