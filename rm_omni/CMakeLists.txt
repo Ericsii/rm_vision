@@ -1,20 +1,9 @@
-cmake_minimum_required(VERSION 3.8)
-project(openvino_armor_detector)
-
-# Default to C++17
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-endif()
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+cmake_minimum_required(VERSION 3.11)
+project(rm_omni)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # -------- Find thirdparty library -------- #
 # ROS packages
@@ -30,6 +19,7 @@ find_package(tf2 REQUIRED)
 find_package(auto_aim_interfaces REQUIRED)
 find_package(rmoss_interfaces REQUIRED)
 find_package(rmoss_util REQUIRED)
+find_package(openvino_armor_detector REQUIRED)
 
 set(ros_dependencies
   rclcpp
@@ -43,6 +33,7 @@ set(ros_dependencies
   auto_aim_interfaces
   rmoss_util
   rmoss_interfaces
+  openvino_armor_detector
 )
 
 # third party packages
@@ -61,9 +52,7 @@ set(other_dependencies
 
 # ------------- Build library ------------- #
 add_library(${PROJECT_NAME} SHARED
-  src/openvino_detector.cpp
-  src/mono_measure_tool.cpp
-  src/openvino_detect_node.cpp
+  src/omni_node.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -75,8 +64,8 @@ target_link_libraries(${PROJECT_NAME}
 ament_target_dependencies(${PROJECT_NAME} ${ros_dependencies})
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN "rm_auto_aim::OpenVINODetectNode"
-  EXECUTABLE detector_node
+  PLUGIN "rm_omni::OmniNode"
+  EXECUTABLE omni_node
 )
 
 # ---------------- Install --------------- #
@@ -85,7 +74,7 @@ install(DIRECTORY include/
 )
 
 # Install  directories
-install(DIRECTORY launch config model
+install(DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -101,10 +90,9 @@ install(TARGETS ${PROJECT_NAME}
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
-  add_subdirectory(test)
 endif()
 
 ament_export_targets(export_${PROJECT_NAME})
-ament_export_dependencies(${ros_dependencies})
+ament_export_dependencies(${ros_dependencies} ${other_dependencies})
 
 ament_package()
