@@ -35,6 +35,11 @@ OmniNode::OmniNode(rclcpp::NodeOptions options)
     RCLCPP_ERROR(this->get_logger(), "Failed to initialize OpenVINO");
     return;
   }
+  rcl_interfaces::msg::ParameterDescriptor param_desc;
+  param_desc.description = "0-RED, 1-BLUE";
+  param_desc.integer_range[0].from_value = 0;
+  param_desc.integer_range[0].to_value = 1;
+  detect_color_ = this->declare_parameter("detect_color", 0, param_desc);
 
   // Measure tool
   measure_tool_ = std::make_unique<rm_auto_aim::MonoMeasureTool>();
@@ -175,6 +180,8 @@ void OmniNode::openvino_detect_callback(
     return;
   }
 
+  detect_color_ = this->get_parameter("target_color").as_int();
+
   auto timestamp = rclcpp::Time(timestamp_nanosec);
 
   // Used to draw debug info
@@ -188,6 +195,12 @@ void OmniNode::openvino_detect_callback(
   armors_msg.header.stamp = timestamp;
 
   for (auto & obj : objs) {
+    if (detect_color_ == 0 && obj.color != rm_auto_aim::ArmorColor::RED) {
+      continue;
+    } else if (detect_color_ == 1 && obj.color != rm_auto_aim::ArmorColor::BLUE) {
+      continue;
+    }
+
     auto_aim_interfaces::msg::Armor armor;
 
     cv::Point3f target_position;
@@ -206,8 +219,7 @@ void OmniNode::openvino_detect_callback(
     tf2::Quaternion tf_quaternion;
     tf_rot_mat.getRotation(tf_quaternion);
 
-    armor.color = static_cast<int>(obj.number);
-    armor.number = std::to_string(static_cast<int>(obj.number));
+    armor.number = rm_auto_aim::kArmorNames[static_cast<int>(obj.number)];
     armor.pose.position.x = target_position.x;
     armor.pose.position.y = target_position.y;
     armor.pose.position.z = target_position.z;
