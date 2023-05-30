@@ -57,7 +57,7 @@ public:
   void drawResults(cv::Mat & img);
 
   int binary_thres;
-  int detect_color; // 0 for red, 1 for blue
+  int detect_color;  // 0 for red, 1 for blue
   LightParams l;
   ArmorParams a;
 
