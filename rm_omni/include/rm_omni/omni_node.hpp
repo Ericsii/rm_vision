@@ -66,6 +66,7 @@ private:
   std::string frame_id_;
 
   // OpenVINO Detector
+  int detect_color_;  // 0: red, 1: blue
   std::mutex detector_mutex_;
   std::unique_ptr<rm_auto_aim::OpenVINODetector> detector_;
   std::queue<std::future<bool>> detect_requests_;
