@@ -37,6 +37,7 @@ OmniNode::OmniNode(rclcpp::NodeOptions options)
   }
   rcl_interfaces::msg::ParameterDescriptor param_desc;
   param_desc.description = "0-RED, 1-BLUE";
+  param_desc.integer_range.resize(1);
   param_desc.integer_range[0].from_value = 0;
   param_desc.integer_range[0].to_value = 1;
   detect_color_ = this->declare_parameter("detect_color", 0, param_desc);
