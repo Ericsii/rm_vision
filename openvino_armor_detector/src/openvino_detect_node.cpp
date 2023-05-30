@@ -200,8 +200,7 @@ void OpenVINODetectNode::openvino_detect_callback(
   for (auto & obj : objs) {
     if (detect_color_ == 0 && obj.color != ArmorColor::RED) {
       continue;
-    }
-    else if (detect_color_ == 1 && obj.color != ArmorColor::BLUE) {
+    } else if (detect_color_ == 1 && obj.color != ArmorColor::BLUE) {
       continue;
     }
 
