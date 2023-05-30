@@ -76,8 +76,7 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
 
 void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg)
 {
-  if (!msg->tracking)
-  {
+  if (!msg->tracking) {
     return;
   }
   // Get current gimbal angle.
@@ -140,7 +139,11 @@ void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Targe
     target_yaw = std::atan2(target_predict_position.y(), target_predict_position.x());
 
     // Choose the target with minimum yaw error.
-    if (::abs(::fmod(tmp_yaw, M_PI) - cur_yaw) < min_yaw && target_predict_position.head(2).norm() < min_dis) {
+    if (::abs(
+        ::fmod(
+          tmp_yaw,
+          M_PI) - cur_yaw) < min_yaw && target_predict_position.head(2).norm() < min_dis)
+    {
       min_yaw = ::abs(::fmod(tmp_yaw, M_PI) - cur_yaw);
       min_dis = target_predict_position.head(2).norm();
       hit_yaw = target_yaw;
