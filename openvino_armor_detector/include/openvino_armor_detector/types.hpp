@@ -51,6 +51,17 @@ typedef struct
   cv::Rect box;
 } ArmorObject;
 
+constexpr const char * kArmorNames[] = {
+  "guard",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "outpost",
+  "base"
+};
+
 }  // namespace rm_auto_aim
 
 #endif  // OPENVINO_ARMOR_DETECTOR__TYPES_HPP_

@@ -1,66 +1,58 @@
-// Copyright 2023 Chen Jun
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
+// Copyright 2022 Chen Jun
 
 #ifndef ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 #define ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 
+// ROS
 #include <message_filters/subscriber.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/create_timer_ros.h>
 #include <tf2_ros/message_filter.h>
 #include <tf2_ros/transform_listener.h>
 
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/trigger.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+
+// STD
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <rclcpp/rclcpp.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
-
-#include "armor_processor/tracker.hpp"
+#include "armor_tracker/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
+#include "auto_aim_interfaces/msg/tracker_info.hpp"
 
 namespace rm_auto_aim
 {
 using tf2_filter = tf2_ros::MessageFilter<auto_aim_interfaces::msg::Armors>;
-class ArmorProcessorNode : public rclcpp::Node
+class ArmorTrackerNode : public rclcpp::Node
 {
 public:
-  explicit ArmorProcessorNode(const rclcpp::NodeOptions & options);
+  explicit ArmorTrackerNode(const rclcpp::NodeOptions & options);
 
 private:
   void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr);
 
   void publishMarkers(const auto_aim_interfaces::msg::Target & target_msg);
 
-private:
+  // Maximum allowable armor distance in the XOY plane
+  double max_armor_distance_;
+
   // The time when the last message was received
   rclcpp::Time last_time_;
   double dt_;
-  int target_color_;  // 0: blue 1: red
 
   // Armor tracker
+  double s2qxyz_, s2qyaw_, s2qr_;
+  double r_xyz_factor, r_yaw;
+  double lost_time_thres_;
   std::unique_ptr<Tracker> tracker_;
+
+  // Reset tracker service
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_tracker_srv_;
 
   // Subscriber with tf2 message_filter
   std::string target_frame_;
@@ -69,6 +61,9 @@ private:
   message_filters::Subscriber<auto_aim_interfaces::msg::Armors> armors_sub_;
   std::shared_ptr<tf2_filter> tf2_filter_;
 
+  // Tracker info publisher
+  rclcpp::Publisher<auto_aim_interfaces::msg::TrackerInfo>::SharedPtr info_pub_;
+
   // Publisher
   rclcpp::Publisher<auto_aim_interfaces::msg::Target>::SharedPtr target_pub_;
 
@@ -76,7 +71,7 @@ private:
   visualization_msgs::msg::Marker position_marker_;
   visualization_msgs::msg::Marker linear_v_marker_;
   visualization_msgs::msg::Marker angular_v_marker_;
-  visualization_msgs::msg::Marker armors_marker_;
+  visualization_msgs::msg::Marker armor_marker_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 };
 

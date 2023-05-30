@@ -32,7 +32,7 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
   offset_yaw_ = this->declare_parameter("projectile.offset_yaw", 0.0);
   offset_time_ = this->declare_parameter("projectile.offset_time", 0.0);
   shoot_speed_ = this->declare_parameter("projectile.initial_speed", 18.0);
-  target_topic_ = this->declare_parameter("projectile.target_topic", "processor/target");
+  target_topic_ = this->declare_parameter("projectile.target_topic", "tracker/target");
   gimbal_cmd_topic_ = this->declare_parameter("projectile.gimbal_cmd_topic", "gimbal_cmd");
   shoot_data_topic_ = this->declare_parameter("projectile.shoot_data_topic", "robot_shoot_data");
   solver_type_ = this->declare_parameter("projectile.solver_type", "gravity");
@@ -58,8 +58,13 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
 
   shooter_frame_ = this->declare_parameter("projectile.target_frame", "shooter_link");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock(), tf2::durationFromSec(10.0));
+  // Create the timer interface before call to waitForTransform,
+  // to avoid a tf2_ros::CreateTimerInterfaceException exception
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    this->get_node_base_interface(), this->get_node_timers_interface());
+  tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-  target_sub_.subscribe(this, target_topic_);
+  target_sub_.subscribe(this, target_topic_, rclcpp::SensorDataQoS().get_rmw_qos_profile());
   tf_filter_ =
     std::make_shared<tf2_filter>(
     target_sub_, *tf_buffer_, shooter_frame_, 10, this->get_node_logging_interface(),
@@ -71,6 +76,9 @@ ProjectileMotionNode::ProjectileMotionNode(rclcpp::NodeOptions options)
 
 void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg)
 {
+  if (!msg->tracking) {
+    return;
+  }
   // Get current gimbal angle.
   double cur_roll, cur_pitch, cur_yaw;
   try {
@@ -96,31 +104,48 @@ void ProjectileMotionNode::target_callback(const auto_aim_interfaces::msg::Targe
   auto center_velocity = Eigen::Vector3d(msg->velocity.x, msg->velocity.y, msg->velocity.z);
 
   // Calculate each target position at current time & predict time.
-  double min_yaw = DBL_MAX;
+  double min_yaw = DBL_MAX, min_dis = DBL_MAX;
   double hit_yaw, hit_pitch;
-  for (size_t i = 0; i < 4; ++i) {
-    double tmp_yaw = msg->yaw + i * M_PI_2;
-    double r = i % 2 == 0 ? msg->radius_1 : msg->radius_2;
-    auto target_position = center_position + Eigen::Vector3d(
-      r * std::cos(tmp_yaw), r * std::sin(tmp_yaw),
-      i % 2 == 0 ? msg->position.z : msg->z_2);
+  bool is_current_pair = true;
+  double r = 0., target_dz = 0., fly_time = 0.;
+  double target_pitch, target_yaw;
+  Eigen::Vector3d target_position, target_predict_position;
+  for (int i = 0; i < msg->armors_num; ++i) {
+    double tmp_yaw = msg->yaw + i * (2 * M_PI / msg->armors_num);
+    if (msg->armors_num == 4) {
+      r = is_current_pair ? msg->radius_1 : msg->radius_2;
+      is_current_pair = !is_current_pair;
+      target_dz = is_current_pair ? 0. : msg->dz;
+    } else {
+      r = msg->radius_1;
+      target_dz = 0.;
+    }
+    target_position = center_position + Eigen::Vector3d(
+      -r * std::cos(tmp_yaw), -r * std::sin(tmp_yaw),
+      target_dz);
 
     // Use distance to calculate the time offset. (Approximate)
-    auto fly_time = target_position.head(2).norm() / shoot_speed_ + offset_time_;
+    fly_time = target_position.head(2).norm() / shoot_speed_ + offset_time_;
     tmp_yaw = tmp_yaw + msg->v_yaw * fly_time;
-    auto target_predict_position =
-      center_position + center_velocity * fly_time +
+    target_predict_position = center_position + center_velocity * fly_time +
       Eigen::Vector3d(
-      r * std::cos(tmp_yaw), r * std::sin(
-        tmp_yaw), i % 2 == 0 ? msg->position.z : msg->z_2);
+      -r * std::cos(tmp_yaw), -r * std::sin(tmp_yaw),
+      target_dz);
 
-    double target_pitch, target_yaw;
     solver_->solve(
       target_predict_position.head(2).norm(), target_predict_position.z(),
       target_pitch);
+    target_pitch = -target_pitch;  // Right-handed system
     target_yaw = std::atan2(target_predict_position.y(), target_predict_position.x());
-    if (std::abs(target_yaw - cur_yaw) < min_yaw) {
-      min_yaw = std::abs(target_yaw - cur_yaw);
+
+    // Choose the target with minimum yaw error.
+    if (::abs(
+        ::fmod(
+          tmp_yaw,
+          M_PI) - cur_yaw) < min_yaw && target_predict_position.head(2).norm() < min_dis)
+    {
+      min_yaw = ::abs(::fmod(tmp_yaw, M_PI) - cur_yaw);
+      min_dis = target_predict_position.head(2).norm();
       hit_yaw = target_yaw;
       hit_pitch = target_pitch;
     }

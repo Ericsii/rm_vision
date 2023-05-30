@@ -1,8 +1,0 @@
-/**:
-  ros__parameters:
-    tracker:
-      initial_target_color: 0 # 0 - blue | 1 - red
-      max_match_distance: 0.2
-      tracking_threshold: 5
-      lost_threshold: 5
-      target_frame: 'gimbal_odom'

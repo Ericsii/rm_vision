@@ -1,22 +1,20 @@
-# armor_processor
+# armor_tracker
 
-- [armor_processor](#armor_processor)
-  - [ArmorProcessorNode](#armorprocessornode)
-  - [KalmanFilter](#kalmanfilter)
+- [ArmorTrackerNode](#armortrackernode)
   - [Tracker](#tracker)
-  - [SpinObserver](#spinoberserver)
+    - [KalmanFilter](#kalmanfilter)
 
-## ArmorProcessorNode
+## ArmorTrackerNode
 装甲板处理节点
 
-订阅识别节点发布的装甲板三维位置及机器人的坐标转换信息，将装甲板三维位置通过 `tf` 变换到指定惯性系下，然后将目标送入跟踪器中得到跟踪目标在指定惯性系下（一般是以云台中心为原点，IMU 上电时的 Yaw 朝向为 X 轴的惯性系）的位置及速度，再经过小陀螺状态检测器的处理后，发布最终的目标位置和速度
+订阅识别节点发布的装甲板三维位置及机器人的坐标转换信息，将装甲板三维位置变换到指定惯性系（一般是以云台中心为原点，IMU 上电时的 Yaw 朝向为 X 轴的惯性系）下，然后将装甲板目标送入跟踪器中，输出跟踪机器人在指定惯性系下的状态
 
 订阅：
 - 已识别到的装甲板 `/detector/armors`
 - 机器人的坐标转换信息 `/tf` `/tf_static`
 
 发布：
-- 最终锁定的目标 `/processor/target`
+- 最终锁定的目标 `/tracker/target`
 
 参数：
 - 跟踪器参数 tracker
@@ -24,7 +22,12 @@
   - `DETECTING` 状态进入 `TRACKING` 状态的阈值 tracking_threshold
   - `TRACKING` 状态进入 `LOST` 状态的阈值 lost_threshold
 
-## KalmanFilter
+## ExtendedKalmanFilter
+
+$$ x_c = x_a + r * cos (\theta) $$
+$$ y_c = y_a + r * sin (\theta) $$
+
+$$ x = [x_c, y_c,z, yaw, v_{xc}, v_{yc},v_z, v_{yaw}, r]^T $$
 
 参考 OpenCV 中的卡尔曼滤波器使用 Eigen 进行了实现
 
@@ -78,9 +81,4 @@ $$ P_{k|k} = (I - K * H) * P_{k|k-1} $$
   
   最后选取位置相差最小的目标作为最佳匹配项，更新卡尔曼滤波器，将更新后的状态作为跟踪器的结果输出
 
-目标在小陀螺状态下的 trick：若当前帧的所有目标与预测位置的偏差都不符合条件，但又存在与跟踪对象相同数字的目标，则重置卡尔曼滤波器并选取相同数字的目标作为跟踪目标，卡尔曼滤波器初始状态中的速度设为上一跟踪目标的速度。通过这种方式，卡尔曼滤波器的状态向量中速度不会从 0 开始迭代，相当于认为目标是沿着车身旋转的切线方向线性运动
-
-## SpinDetector
-
-小陀螺状态检测器，通过简单的方法实现对目标小陀螺状态的判断，当目标进入小陀螺模式时限制云台运动并判断合适的开火时机
 
