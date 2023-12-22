@@ -33,7 +33,7 @@ colcon build --symlink-install
 
 ## 致谢
 
-感谢 @RangerOnMars @chenjunnn @gezp @tup-robomaster (沈阳航空航天大学RoboMaster TUP战队) @robomaster-oss （RoboMaster开源软件栈项目），以上个人与组织对于本项目提供的大力支持
+感谢 [@RangerOnMars](https://github.com/RangerOnMars) [@chenjunnn](https://github.com/chenjunnn) [@gezp](https://github.com/gezp) [@tup-robomaster](https://github.com/tup-robomaster) (沈阳航空航天大学RoboMaster TUP战队) [@robomaster-oss](https://github.com/robomaster-oss) （RoboMaster开源软件栈项目），以上个人与组织对于本项目提供的大力支持
 
 ## Lisence
 
